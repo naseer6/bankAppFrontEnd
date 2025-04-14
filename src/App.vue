@@ -29,6 +29,7 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  width: 100vw; /* Ensure the app container spans the full width */
 }
 
 /* Allow the main content to grow and push the footer to the bottom */

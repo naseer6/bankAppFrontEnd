@@ -1,7 +1,7 @@
 <template>
     <footer class="footer mt-auto py-4 bg-dark text-white shadow-sm">
       <div class="container text-center">
-        <p class="mb-1">&copy; 2025 BankSecure. All rights reserved.</p>
+        <p class="mb-1">&copy; 2025 SigmaBank. All rights reserved.</p>
         <small class="text-muted">Built with ❤️ by Team FinTechers</small>
       </div>
     </footer>

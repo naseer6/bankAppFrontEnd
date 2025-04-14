@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm py-3 mb-4">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm py-3">
     <div class="container-fluid">
       <RouterLink class="navbar-brand fw-bold" to="/">SigmaBank</RouterLink>
       <button
