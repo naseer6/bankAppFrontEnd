@@ -1,23 +1,38 @@
 <script>
+import Navbar from './components/Navbar.vue';
+import Footer from './components/Footer.vue';
 
 export default {
+  components: {
+    Navbar,
+    Footer,
+  },
   setup() {
   },
 };
 </script>
 <template>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container-fluid">
-      <RouterLink class="nav-item nav-link" to="/">Home</RouterLink>
-      <div class="navbar-nav ms-auto">
-        <RouterLink class="nav-item nav-link" to="/auth">Login/Register</RouterLink>
-        <RouterLink class="nav-item nav-link" to="/profile">Profile</RouterLink>
-      </div>
+  <div class="app-container">
+    <Navbar />
+    <div class="container flex-grow-1">
+      <main>
+        <RouterView />
+      </main>
     </div>
-  </nav>
-  <div class="container">
-    <main>
-      <RouterView />
-    </main>
+    <Footer />
   </div>
 </template>
+
+<style>
+/* Ensure the app container takes up the full height of the viewport */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Allow the main content to grow and push the footer to the bottom */
+.flex-grow-1 {
+  flex: 1;
+}
+</style>
