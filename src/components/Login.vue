@@ -10,7 +10,7 @@ export default {
   data() {
     return {
       formData: {
-        email: "",
+        username: "",
         password: "",
       },
       error: null,
@@ -53,8 +53,8 @@ export default {
   </Notification>
   <form @submit.prevent="handleSubmit">
     <div class="mb-3">
-      <label for="email" class="form-label">Email</label>
-      <input type="email" class="form-control" id="email" v-model="formData.email" required placeholder="Enter your email" />
+      <label for="username" class="form-label">Username</label>
+      <input type="username" class="form-control" id="username" v-model="formData.username" required placeholder="Enter your username" />
     </div>
     <div class="mb-3">
       <label for="password" class="form-label">Password</label>
