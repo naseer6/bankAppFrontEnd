@@ -23,16 +23,14 @@
 import axios from "axios";
 import Notification from "./Notification.vue";
 import Loading from "./Loading.vue";
+import { useAuthStore } from "@/stores/auth";
 
 export default {
   name: "Login",
   components: { Notification, Loading },
   data() {
     return {
-      formData: {
-        username: "",
-        password: "",
-      },
+      formData: { username: "", password: "" },
       error: null,
       isLoading: false,
       success: null,
@@ -45,20 +43,21 @@ export default {
         this.isLoading = true;
 
         const res = await axios.post("http://localhost:8080/api/users/login", this.formData);
+        console.log("Login response:", res.data);
 
-        if (res.data.token) {
-          // ✅ Store token
-          localStorage.setItem("token", res.data.token);
+        const { token, role, approved, message } = res.data;
 
-          // ✅ Redirect based on role
-          if (res.data.role === "ADMIN") {
-            this.$router.push("/admin");
-          } else {
-            this.$router.push("/profile");
-          }
+        const auth = useAuthStore();
+
+        if (token) {
+          auth.setToken(token);
+        }
+
+        this.success = message || "Login successful";
+
+        if (role === "ADMIN") {
+          this.$router.push("/admin");
         } else {
-          // If not approved, show message but proceed to profile
-          this.success = res.data.message || "Login successful";
           this.$router.push("/profile");
         }
       } catch (error) {
@@ -71,4 +70,5 @@ export default {
   },
 };
 </script>
+
 

@@ -17,10 +17,14 @@
       <div class="collapse navbar-collapse" id="navbarContent">
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
           <li class="nav-item">
-            <RouterLink class="nav-link" to="/auth">Login / Register</RouterLink>
-          </li>
-          <li class="nav-item">
             <RouterLink class="nav-link" to="/profile">Profile</RouterLink>
+          </li>
+
+          <li class="nav-item" v-if="auth.isLoggedIn">
+            <button class="btn btn-outline-light ms-2" @click="logout">Logout</button>
+          </li>
+          <li class="nav-item" v-else>
+            <RouterLink class="nav-link" to="/auth">Login / Register</RouterLink>
           </li>
         </ul>
       </div>
@@ -28,28 +32,32 @@
   </nav>
 </template>
 
-<script>
-export default {
-  name: 'Navbar',
+<script setup>
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+
+const router = useRouter();
+const auth = useAuthStore();
+
+const logout = () => {
+  auth.logout();
+  router.push("/auth");
 };
 </script>
 
 <style scoped>
 .navbar {
-  background-color: #003366 !important; /* Deep blue for banking feel */
+  background-color: #003366 !important;
 }
-
 .navbar-brand {
   font-size: 1.5rem;
   letter-spacing: 0.5px;
 }
-
 .nav-link {
   font-size: 1rem;
   transition: color 0.2s ease-in-out;
 }
-
 .nav-link:hover {
-  color: #ffcc00 !important; /* Gold hover to make it pop */
+  color: #ffcc00 !important;
 }
 </style>

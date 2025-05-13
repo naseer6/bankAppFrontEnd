@@ -29,6 +29,7 @@
 
 <script>
 import axios from "axios";
+import { getAuthToken } from "@/utils/auth";
 
 export default {
   data() {
@@ -39,23 +40,28 @@ export default {
     };
   },
   async mounted() {
-    const token = localStorage.getItem("token");
-
     try {
+      const token = getAuthToken();
+
+      if (!token) {
+        this.error = "Not authenticated.";
+        return;
+      }
+
       const res = await axios.get("http://localhost:8080/api/users/me", {
         headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
+          Authorization: `Bearer ${token}`,
         },
       });
+
       this.user = res.data;
     } catch (err) {
       console.error(err);
-      this.error = "Failed to load user data";
+      this.error = "Failed to load user profile.";
     } finally {
       this.isLoading = false;
     }
   },
 };
 </script>
-
 

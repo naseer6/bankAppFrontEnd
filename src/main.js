@@ -3,6 +3,7 @@ import Home from "./components/Home.vue";
 import About from "./components/About.vue";
 import Auth from "./components/Auth.vue";
 import Profile from "./components/Profile.vue";
+import Admin from "./components/Admin.vue";
 import { getAuthToken, setAuthToken } from "@/utils/auth";
 import { createPinia } from "pinia";
 import axios from "axios"; 
@@ -35,6 +36,10 @@ const routes = [
   {
     path: "/profile",
     component: Profile,
+  },
+  {
+    path: "/admin",
+    component: Admin,
   },
 ];
 
