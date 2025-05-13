@@ -5,7 +5,9 @@ import Auth from "./components/Auth.vue";
 import Profile from "./components/Profile.vue";
 import { getAuthToken, setAuthToken } from "@/utils/auth";
 import { createPinia } from "pinia";
+import axios from "axios"; 
 
+axios.defaults.withCredentials = true;
 import "./assets/main.css";
 
 import { createApp } from "vue";
