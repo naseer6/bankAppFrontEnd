@@ -17,6 +17,9 @@
       <div class="collapse navbar-collapse" id="navbarContent">
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
           <li class="nav-item">
+            <RouterLink class="nav-link" to="/atm">ATM</RouterLink>
+          </li>
+          <li class="nav-item">
             <RouterLink class="nav-link" to="/profile">Profile</RouterLink>
           </li>
 
@@ -31,6 +34,7 @@
     </div>
   </nav>
 </template>
+
 
 <script setup>
 import { useRouter } from "vue-router";
