@@ -67,8 +67,8 @@
           <tbody>
             <tr v-for="tx in transactions" :key="tx.id">
               <td>{{ tx.id }}</td>
-              <td>{{ tx.senderIban }}</td>
-              <td>{{ tx.receiverIban }}</td>
+              <td>{{ tx.fromIban }}</td>
+              <td>{{ tx.toIban }}</td>
               <td>€{{ tx.amount.toFixed(2) }}</td>
               <td>{{ formatDate(tx.date) }}</td>
               <td>{{ tx.description }}</td>
