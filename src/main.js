@@ -5,6 +5,7 @@ import Auth from "./components/Auth.vue";
 import Profile from "./components/Profile.vue";
 import Admin from "./components/Admin.vue";
 import ATM from "./components/ATM.vue";
+import AccountOverview from "./components/AccountOverview.vue"; // <-- Add this line
 import { getAuthToken, setAuthToken } from "@/utils/auth";
 import { createPinia } from "pinia";
 import axios from "axios"; 
@@ -45,6 +46,10 @@ const routes = [
   {
     path: "/atm",
     component: ATM,
+  },
+  {
+    path: "/accountdetails", // <-- Add this route
+    component: AccountOverview,
   },
 ];
 
