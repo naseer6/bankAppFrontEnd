@@ -23,7 +23,10 @@
             <RouterLink class="nav-link" to="/profile">Profile</RouterLink>
           </li>
           <li class="nav-item" v-if="auth.isLoggedIn">
-            <RouterLink class="nav-link" to="/accountdetails">Account Details</RouterLink>
+            <RouterLink class="nav-link" to="/accountoverview">Account Details</RouterLink>
+          </li>
+          <li class="nav-item" v-if="auth.isLoggedIn">
+            <RouterLink class="nav-link" to="/personaltransactions">Personal Transactions</RouterLink>
           </li>
           <li class="nav-item" v-if="auth.isLoggedIn">
             <button class="btn btn-outline-light ms-2" @click="logout">Logout</button>

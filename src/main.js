@@ -5,16 +5,17 @@ import Auth from "./components/Auth.vue";
 import Profile from "./components/Profile.vue";
 import Admin from "./components/Admin.vue";
 import ATM from "./components/ATM.vue";
-import AccountOverview from "./components/AccountOverview.vue"; // <-- Add this line
+import AccountOverview from "./pages/AccountOverview.vue"; // <-- Add this line
 import { getAuthToken, setAuthToken } from "@/utils/auth";
 import { createPinia } from "pinia";
-import axios from "axios"; 
+import axios from "axios";
 
 axios.defaults.withCredentials = true;
 import "./assets/main.css";
 
 import { createApp } from "vue";
 import App from "./App.vue";
+import PersonalTransactions from "./pages/PersonalTransactions.vue";
 
 // Initialize auth token if it exists
 const token = getAuthToken();
@@ -48,8 +49,12 @@ const routes = [
     component: ATM,
   },
   {
-    path: "/accountdetails", // <-- Add this route
+    path: "/accountoverview",
     component: AccountOverview,
+  },
+  {
+    path: "/personaltransactions",
+    component: PersonalTransactions,
   },
 ];
 
