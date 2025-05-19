@@ -1,7 +1,7 @@
 <template>
   <div v-if="isLoading">Loading profile...</div>
   <div v-else-if="user">
-    <pre>{{ user }}</pre>
+   <!-- <pre>{{ user }}</pre> -->
 
     <div v-if="user.role === 'ADMIN'">
       <h1>👑 Admin Profile</h1>
@@ -12,14 +12,23 @@
       </p>
     </div>
 
-    <div v-else>
-      <h1>User Profile</h1>
+    <div class="user-profile" v-if="user">
+    <h1>User Profile</h1>
+    <div class="card">
+      
+      <p><strong>Name:</strong> {{ user.name }}</p>
       <p><strong>Username:</strong> {{ user.username }}</p>
-      <p><strong>Status:</strong>
-        <span v-if="user.approved">✅ Approved</span>
-        <span v-else>⏳ Pending approval</span>
+      <p><strong>Email:</strong> {{ user.email }}</p>
+      <p><strong>Phone:</strong> {{ user.phone }}</p>
+      <p><strong>Address:</strong> {{ user.address }}</p>
+      <p><strong>Role:</strong> {{ user.role }}</p>
+      <p>
+        <strong>Status:</strong>
+        <span v-if="user.approved" class="approved">✅ Approved</span>
+        <span v-else class="pending">⏳ Pending approval</span>
       </p>
     </div>
+  </div>
   </div>
 
   <div v-if="error">
@@ -65,3 +74,34 @@ export default {
 };
 </script>
 
+<style>
+.user-profile {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 1rem;
+  font-family: Arial, sans-serif;
+}
+
+.card {
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 20px;
+  background-color: #fafafa;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card p {
+  margin: 10px 0;
+  font-size: 16px;
+}
+
+.approved {
+  color: green;
+  font-weight: bold;
+}
+
+.pending {
+  color: orange;
+  font-weight: bold;
+}
+</style>
