@@ -63,21 +63,25 @@ const message = ref(null)
 
 const API = 'http://localhost:8080'
 
+import { setAuthToken } from "@/utils/auth";
+
 const login = async () => {
   try {
     const res = await axios.post(`${API}/api/users/login-email`, {
       email: email.value,
       password: password.value
-    })
+    });
 
-    atmToken.value = res.data.token
-    localStorage.setItem('atmToken', atmToken.value)
-    await fetchUser()
+    atmToken.value = res.data.token;
+    localStorage.setItem('atmToken', atmToken.value);
+    setAuthToken(atmToken.value); // ✅ Add this line
+    await fetchUser();
   } catch (err) {
-    error.value = '❌ Login failed'
-    console.error(err)
+    error.value = '❌ Login failed';
+    console.error(err);
   }
-}
+};
+
 
 const logout = () => {
   localStorage.removeItem('atmToken')
