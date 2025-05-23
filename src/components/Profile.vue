@@ -22,6 +22,7 @@
       <p><strong>Phone:</strong> {{ user.phone }}</p>
       <p><strong>Address:</strong> {{ user.address }}</p>
       <p><strong>Role:</strong> {{ user.role }}</p>
+      <p><strong>BSN:</strong> {{ user.bsnNumber }}</p>
       <p>
         <strong>Status:</strong>
         <span v-if="user.approved" class="approved">✅ Approved</span>

@@ -5,8 +5,8 @@
   </Notification>
   <form @submit.prevent="handleSubmit">
     <div class="mb-3">
-      <label for="username" class="form-label">Username</label>
-      <input type="text" class="form-control" id="username" v-model="formData.username" required placeholder="Enter your username" />
+      <label for="email" class="form-label">Email</label>
+<input type="email" class="form-control" id="email" v-model="formData.email" required placeholder="Enter your email" />
     </div>
     <div class="mb-3">
       <label for="password" class="form-label">Password</label>
@@ -30,7 +30,8 @@ export default {
   components: { Notification, Loading },
   data() {
     return {
-      formData: { username: "", password: "" },
+      formData: { email: "", password: "" },
+
       error: null,
       isLoading: false,
       success: null,

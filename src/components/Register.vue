@@ -9,10 +9,15 @@ export default {
   data() {
     return {
       formData: {
-        email: "",
-        password: "",
-        confirmPassword: "",
-      },
+  name: "",
+  username: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  phone: "",
+  address: "",
+  bsnNumber: "", // ✅ Add this
+},
       error: null,
       isLoading: false,
       success: null,
@@ -76,6 +81,18 @@ export default {
       <label for="address" class="form-label">Address</label>
       <input type="address" class="form-control" id="address" v-model="formData.address" required placeholder="Enter your address" />
     </div>
+    <div class="mb-3">
+  <label for="bsn" class="form-label">BSN Number</label>
+  <input
+    type="text"
+    class="form-control"
+    id="bsn"
+    v-model="formData.bsnNumber"
+    required
+    placeholder="Enter your BSN number"
+  />
+</div>
+
     <button type="submit" class="btn btn-primary w-100">Register</button>
     <Notification v-if="error" :isError="true" @close="error = null" class="mt-3">
       {{ error }}

@@ -67,7 +67,7 @@ import { setAuthToken } from "@/utils/auth";
 
 const login = async () => {
   try {
-    const res = await axios.post(`${API}/api/users/login-email`, {
+    const res = await axios.post(`${API}/api/users/login`, {
       email: email.value,
       password: password.value
     });
