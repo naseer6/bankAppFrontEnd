@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import Home from "./components/Home.vue";
 import About from "./components/About.vue";
 import Auth from "./components/Auth.vue";
+import Auth from "./components/TransferLimits.vue";
 import Profile from "./components/Profile.vue";
 import Admin from "./components/Admin.vue";
 import ATM from "./components/ATM.vue";
@@ -16,6 +17,7 @@ import "./assets/main.css";
 import { createApp } from "vue";
 import App from "./App.vue";
 import PersonalTransactions from "./pages/PersonalTransactions.vue";
+import TransferLimits from "./components/TransferLimits.vue";
 
 // Initialize auth token if it exists
 const token = getAuthToken();
@@ -35,6 +37,10 @@ const routes = [
   {
     path: "/auth",
     component: Auth,
+  },
+  {
+    path: "/TransferLimits",
+    component: TransferLimits,
   },
   {
     path: "/profile",
