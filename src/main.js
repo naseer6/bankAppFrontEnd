@@ -5,7 +5,8 @@ import Auth from "./components/Auth.vue";
 import Profile from "./components/Profile.vue";
 import Admin from "./components/Admin.vue";
 import ATM from "./components/ATM.vue";
-import AccountOverview from "./pages/AccountOverview.vue"; // <-- Add this line
+import AccountOverview from "./pages/AccountOverview.vue";
+import TransferManagement from "./pages/TransferManagement.vue"; 
 import { getAuthToken, setAuthToken } from "@/utils/auth";
 import { createPinia } from "pinia";
 import axios from "axios";
@@ -55,6 +56,10 @@ const routes = [
   {
     path: "/personaltransactions",
     component: PersonalTransactions,
+  },
+  {
+    path: "/transfers",
+    component: TransferManagement,
   },
 ];
 

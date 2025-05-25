@@ -49,12 +49,37 @@
                 <strong>IBAN:</strong> {{ account.iban }}<br />
                 <strong>Balance:</strong> €{{ (account.balance || 0).toFixed(2) }}
               </p>
-              <button
-                class="btn btn-outline-primary"
-                @click="goToTransactions(account.id)"
-              >
-                View Transactions
-              </button>
+
+              <!-- Account Limits Information -->
+              <div class="alert alert-light mt-3">
+                <h6 class="mb-2">🛡️ Account Limits</h6>
+                <div class="row">
+                  <div class="col-12">
+                    <small class="text-muted">
+                      <strong>Absolute Limit:</strong> €{{ (account.absoluteLimit || 0).toFixed(2) }}<br>
+                      <strong>Available to Withdraw:</strong> €{{ Math.max(0, (account.balance || 0) - (account.absoluteLimit || 0)).toFixed(2) }}<br>
+                      <strong>Daily Transfer Limit:</strong> €{{ (account.dailyLimit || 0).toFixed(2) }}<br>
+                      <strong>Daily Spent:</strong> €{{ (account.dailySpent || 0).toFixed(2) }}<br>
+                      <strong>Remaining Daily Limit:</strong> €{{ (account.remainingDailyLimit || 0).toFixed(2) }}
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-2 mt-3">
+                <button
+                  class="btn btn-outline-primary btn-sm"
+                  @click="goToTransactions(account.iban)"
+                >
+                  View Transactions
+                </button>
+                <button
+                  class="btn btn-outline-success btn-sm"
+                  @click="goToTransfers"
+                >
+                  Make Transfer
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -88,8 +113,14 @@ export default {
     },
   },
   methods: {
-    goToTransactions(accountId) {
-      this.$router.push(`/accounts/${accountId}/transactions`);
+    goToTransactions(iban) {
+      this.$router.push({
+        path: '/personaltransactions',
+        query: { iban: iban }
+      });
+    },
+    goToTransfers() {
+      this.$router.push('/transfers');
     },
   },
   async mounted() {
@@ -122,5 +153,15 @@ export default {
 <style scoped>
 .card-title {
   font-size: 1.2rem;
+}
+
+.alert-light {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+}
+
+.btn-sm {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
 }
 </style>
