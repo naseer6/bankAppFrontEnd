@@ -26,7 +26,13 @@
             <RouterLink class="nav-link" to="/accountoverview">Account Details</RouterLink>
           </li>
           <li class="nav-item" v-if="auth.isLoggedIn">
-            <RouterLink class="nav-link" to="/personaltransactions">Personal Transactions</RouterLink>
+            <RouterLink class="nav-link" to="/transfers">Transfers</RouterLink>
+          </li>
+          <li class="nav-item" v-if="auth.isLoggedIn">
+            <RouterLink class="nav-link" to="/personaltransactions">Transactions</RouterLink>
+          </li>
+          <li class="nav-item" v-if="auth.isLoggedIn && isAdmin">
+            <RouterLink class="nav-link" to="/admin">Admin Panel</RouterLink>
           </li>
           <li class="nav-item" v-if="auth.isLoggedIn">
             <button class="btn btn-outline-light ms-2" @click="logout">Logout</button>
@@ -40,18 +46,33 @@
   </nav>
 </template>
 
-
 <script setup>
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { ref, onMounted } from "vue";
+import api from "@/utils/api";
 
 const router = useRouter();
 const auth = useAuthStore();
+const isAdmin = ref(false);
+
+const checkUserRole = async () => {
+  if (auth.isLoggedIn) {
+    try {
+      const response = await api.get('/users/me');
+      isAdmin.value = response.data.role === 'ADMIN';
+    } catch (error) {
+      console.error('Failed to fetch user role:', error);
+    }
+  }
+};
 
 const logout = () => {
   auth.logout();
   router.push("/auth");
 };
+
+onMounted(checkUserRole);
 </script>
 
 <style scoped>
