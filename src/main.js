@@ -10,6 +10,7 @@ import TransferManagement from "./pages/TransferManagement.vue";
 import { getAuthToken, setAuthToken } from "@/utils/auth";
 import { createPinia } from "pinia";
 import axios from "axios";
+import AdminAccounts from "./components/AdminAccounts.vue";
 
 axios.defaults.withCredentials = true;
 import "./assets/main.css";
@@ -60,6 +61,11 @@ const routes = [
   {
     path: "/transfers",
     component: TransferManagement,
+  },
+ 
+  {
+    path: "/admin/accounts",
+    component: AdminAccounts,
   },
 ];
 
