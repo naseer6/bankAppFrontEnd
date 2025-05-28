@@ -1,5 +1,15 @@
 # bankAppFrontEnd
 
-Employee/Admin
-admin2@example.com
-admin123
+  Admin
+  "name": "Sigma Admin",
+  "username": "admin1",
+  "email": "admin@sigmabank.com",
+  "password": "AdminPass123!",
+
+
+
+  Customer:
+  "name": "Charlie",
+  "username": "charlie",
+  "email": "charlie@gmail.com",
+  "password": "CharliePass123!",
