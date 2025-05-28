@@ -31,14 +31,39 @@
               placeholder="Enter destination IBAN"
               required 
             />
-            <button 
-              type="button" 
-              class="btn btn-sm btn-outline-secondary mt-1" 
-              @click="searchAccounts"
-            >
-              🔍 Search Accounts
-            </button>
           </div>
+          
+          <!-- New Account Search Section -->
+          <div class="col-12 mt-2">
+            <div class="card border-light">
+              <div class="card-body p-3">
+                <h6 class="card-title mb-3">🔍 Find Account by Name or IBAN</h6>
+                <div class="input-group">
+                  <input 
+                    type="text" 
+                    v-model="searchTerm" 
+                    class="form-control" 
+                    placeholder="Enter customer name"
+                    @keyup.enter="searchAccounts"
+                  />
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-primary" 
+                    @click="searchAccounts"
+                  >
+                    <i class="bi bi-search me-1"></i> Search
+                  </button>
+                </div>
+                <div v-if="isSearching" class="mt-2 text-center">
+                  <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="visually-hidden">Searching...</span>
+                  </div>
+                  <span class="ms-2">Searching...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
           <div class="col-md-6">
             <label class="form-label">Amount (€)</label>
             <input 
@@ -76,21 +101,42 @@
     </div>
 
     <!-- Account Search Results -->
-    <div v-if="searchResults.length > 0" class="card p-3 shadow-sm mb-4">
-      <h5>Search Results</h5>
-      <div class="list-group">
-        <button 
-          v-for="result in searchResults" 
-          :key="result.iban"
-          class="list-group-item list-group-item-action"
-          @click="selectDestinationAccount(result.iban)"
-        >
-          {{ result.iban }} - {{ result.ownerName }} ({{ result.accountType }})
-        </button>
+    <div v-if="searchResults.length > 0" class="card p-4 shadow-sm mb-4 border-primary">
+      <h5 class="card-title d-flex align-items-center mb-3">
+        <i class="bi bi-person-lines-fill me-2"></i> 
+        Account Search Results
+        <span class="badge bg-primary ms-2">{{ searchResults.length }} found</span>
+      </h5>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>Customer Name</th>
+              <th>IBAN</th>
+              <th>Account Type</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="result in searchResults" :key="result.iban">
+              <td>{{ result.ownerName }}</td>
+              <td><code>{{ result.iban }}</code></td>
+              <td><span class="badge bg-info">{{ result.accountType }}</span></td>
+              <td>
+                <button 
+                  class="btn btn-sm btn-success"
+                  @click="selectDestinationAccount(result.iban)"
+                >
+                  <i class="bi bi-check-circle me-1"></i> Select
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <!-- Quick Actions for Own Accounts -->
+    <!-- Quick Actions for Own Accounts
     <div class="card p-4 shadow-sm mb-4">
       <h4 class="mb-3">🏦 Quick Actions</h4>
       <div class="row g-3">
@@ -137,7 +183,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <!-- Admin Section - Limit Management -->
     <div v-if="isAdmin" class="card p-4 shadow-sm mb-4 border-danger">
@@ -274,6 +320,9 @@ const adminTransferLoading = ref(false)
 const actionLoading = ref(false)
 const limitLoading = ref(false)
 const currentUser = ref(null)
+// New search-related variables
+const searchTerm = ref('')
+const isSearching = ref(false)
 
 // Computed properties
 const isAdmin = computed(() => currentUser.value?.role === 'ADMIN')
@@ -431,37 +480,46 @@ const makeWithdrawal = async () => {
   }
 }
 
+// Updated searchAccounts function to use the search input
 const searchAccounts = async () => {
-  const searchTerm = prompt('Enter name or IBAN to search:')
-  if (!searchTerm) return
+  if (!searchTerm.value.trim()) {
+    showMessage('Please enter a name to search', 'error')
+    return
+  }
 
+  isSearching.value = true
+  searchResults.value = []
+  
   try {
-    // Try searching by name first
-    let response
-    try {
-      response = await api.get(`/accounts/find-by-name?name=${searchTerm}`)
-    } catch (nameError) {
-      // If name search fails, try IBAN search
-      try {
-        response = await api.get(`/accounts/search-iban?iban=${searchTerm}`)
-      } catch (ibanError) {
-        showMessage('No accounts found', 'error')
-        return
-      }
-    }
-
+    // Try searching by name
+    const response = await api.get(`/accounts/find-by-name?name=${encodeURIComponent(searchTerm.value.trim())}`)
     searchResults.value = response.data
+    
     if (searchResults.value.length === 0) {
-      showMessage('No accounts found', 'error')
+      showMessage('No accounts found for this name', 'error')
     }
   } catch (error) {
-    showMessage('Search failed', 'error')
+    // If search by name fails, try search by IBAN
+    try {
+      const ibanResponse = await api.get(`/accounts/search-iban?iban=${encodeURIComponent(searchTerm.value.trim())}`)
+      searchResults.value = ibanResponse.data
+      
+      if (searchResults.value.length === 0) {
+        showMessage('No accounts found', 'error')
+      }
+    } catch (ibanError) {
+      showMessage('No accounts found', 'error')
+    }
+  } finally {
+    isSearching.value = false
   }
 }
 
 const selectDestinationAccount = (iban) => {
   transferForm.value.toIban = iban
-  searchResults.value = []
+  showMessage(`Selected account: ${iban}`, 'success')
+  // Scroll back to the transfer form
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const updateLimits = async () => {
@@ -545,5 +603,18 @@ onMounted(async () => {
 .spinner-border-sm {
   width: 1rem;
   height: 1rem;
+}
+
+/* New styles for search results */
+.table-responsive {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+code {
+  font-size: 0.9rem;
+  background-color: rgba(0, 0, 0, 0.03);
+  padding: 2px 4px;
+  border-radius: 3px;
 }
 </style>
