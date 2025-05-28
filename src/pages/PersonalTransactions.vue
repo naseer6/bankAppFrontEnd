@@ -8,20 +8,28 @@
     <div class="card p-3 shadow-sm mb-4">
       <h5>Filter Transactions</h5>
       <div class="row g-3">
-        <div class="col-md-4">
+        <div class="col-md-3">
           <label class="form-label">IBAN</label>
           <input type="text" v-model="filters.iban" class="form-control" placeholder="e.g. NL91INHO0000000045" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">IBAN Type</label>
+          <select v-model="filters.ibanType" class="form-select">
+            <option value="">Both (default)</option>
+            <option value="from">From Account</option>
+            <option value="to">To Account</option>
+          </select>
         </div>
         <div class="col-md-2">
           <label class="form-label">Amount</label>
           <input type="number" v-model.number="filters.amount" class="form-control" />
         </div>
-        <div class="col-md-2">
+        <div class="col-md-1">
           <label class="form-label">Comparator</label>
           <select v-model="filters.comparator" class="form-select">
-            <option value=">">Greater than</option>
-            <option value="<">Less than</option>
-            <option value="=">Equal to</option>
+            <option value=">">></option>
+            <option value="<"><</option>
+            <option value="=">=</option>
           </select>
         </div>
         <div class="col-md-2">
@@ -53,6 +61,9 @@
         <p>No transactions found.</p>
       </div>
       <div v-else>
+        <div class="mb-3">
+          <small class="text-muted">Found {{ transactions.length }} transaction(s)</small>
+        </div>
         <table class="table table-striped">
           <thead>
             <tr>
@@ -62,6 +73,7 @@
               <th>Amount (€)</th>
               <th>Date</th>
               <th>Type</th>
+              <th>Direction</th>
             </tr>
           </thead>
           <tbody>
@@ -69,9 +81,14 @@
               <td>{{ tx.id }}</td>
               <td>{{ tx.fromIban }}</td>
               <td>{{ tx.toIban }}</td>
-              <td>€{{ tx.amount.toFixed(2) }}</td>
+              <td class="fw-bold" :class="getAmountClass(tx)">€{{ tx.amount.toFixed(2) }}</td>
               <td>{{ formatDate(tx.date) }}</td>
               <td>{{ tx.description }}</td>
+              <td>
+                <span class="badge" :class="getDirectionBadgeClass(tx)">
+                  {{ getTransactionDirection(tx) }}
+                </span>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -93,6 +110,7 @@ export default {
       error: null,
       filters: {
         iban: "",
+        ibanType: "", // New filter for IBAN type
         amount: "",
         comparator: ">",
         startDate: "",
@@ -106,10 +124,15 @@ export default {
       this.error = null;
 
       try {
-        // No need to get token, api instance handles it
         const params = new URLSearchParams();
 
-        if (this.filters.iban) params.append("iban", this.filters.iban);
+        if (this.filters.iban) {
+          params.append("iban", this.filters.iban);
+          // Only add ibanType if it's not empty (to maintain backward compatibility)
+          if (this.filters.ibanType) {
+            params.append("ibanType", this.filters.ibanType);
+          }
+        }
         if (this.filters.amount) {
           params.append("amount", this.filters.amount);
           params.append("comparator", this.filters.comparator);
@@ -129,6 +152,7 @@ export default {
     resetFilters() {
       this.filters = {
         iban: "",
+        ibanType: "",
         amount: "",
         comparator: ">",
         startDate: "",
@@ -139,6 +163,31 @@ export default {
     formatDate(dateStr) {
       return new Date(dateStr).toLocaleDateString();
     },
+    getTransactionDirection(tx) {
+      if (!this.filters.iban) return "N/A";
+      
+      const userIban = this.filters.iban.toUpperCase();
+      const fromIban = tx.fromIban ? tx.fromIban.toUpperCase() : "";
+      const toIban = tx.toIban ? tx.toIban.toUpperCase() : "";
+      
+      if (fromIban === userIban && toIban === userIban) return "Internal";
+      if (fromIban === userIban) return "Outgoing";
+      if (toIban === userIban) return "Incoming";
+      return "Related";
+    },
+    getDirectionBadgeClass(tx) {
+      const direction = this.getTransactionDirection(tx);
+      switch (direction) {
+        case "Outgoing": return "bg-danger";
+        case "Incoming": return "bg-success";
+        case "Internal": return "bg-info";
+        default: return "bg-secondary";
+      }
+    },
+    getAmountClass(tx) {
+      const direction = this.getTransactionDirection(tx);
+      return direction === "Outgoing" ? "text-danger" : direction === "Incoming" ? "text-success" : "";
+    }
   },
   mounted() {
     const iban = this.$route.query.iban;
@@ -153,5 +202,9 @@ export default {
 <style scoped>
 .table th, .table td {
   vertical-align: middle;
+}
+
+.fw-bold {
+  font-weight: bold;
 }
 </style>
