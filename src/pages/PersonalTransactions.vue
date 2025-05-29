@@ -81,12 +81,14 @@
               <td>{{ tx.id }}</td>
               <td>{{ tx.fromIban }}</td>
               <td>{{ tx.toIban }}</td>
-              <td class="fw-bold" :class="getAmountClass(tx)">€{{ tx.amount.toFixed(2) }}</td>
+              <td class="fw-bold" :class="getAmountClass(tx)">
+                {{ formatAmount(tx) }}
+              </td>
               <td>{{ formatDate(tx.date) }}</td>
               <td>{{ tx.description }}</td>
               <td>
                 <span class="badge" :class="getDirectionBadgeClass(tx)">
-                  {{ getTransactionDirection(tx) }}
+                  {{ tx.direction }}
                 </span>
               </td>
             </tr>
@@ -110,7 +112,7 @@ export default {
       error: null,
       filters: {
         iban: "",
-        ibanType: "", // New filter for IBAN type
+        ibanType: "",
         amount: "",
         comparator: ">",
         startDate: "",
@@ -128,7 +130,6 @@ export default {
 
         if (this.filters.iban) {
           params.append("iban", this.filters.iban);
-          // Only add ibanType if it's not empty (to maintain backward compatibility)
           if (this.filters.ibanType) {
             params.append("ibanType", this.filters.ibanType);
           }
@@ -163,30 +164,36 @@ export default {
     formatDate(dateStr) {
       return new Date(dateStr).toLocaleDateString();
     },
-    getTransactionDirection(tx) {
-      if (!this.filters.iban) return "N/A";
-      
-      const userIban = this.filters.iban.toUpperCase();
-      const fromIban = tx.fromIban ? tx.fromIban.toUpperCase() : "";
-      const toIban = tx.toIban ? tx.toIban.toUpperCase() : "";
-      
-      if (fromIban === userIban && toIban === userIban) return "Internal";
-      if (fromIban === userIban) return "Outgoing";
-      if (toIban === userIban) return "Incoming";
-      return "Related";
+    formatAmount(tx) {
+      // Use signedAmount if available, otherwise fall back to regular amount
+      const amount = tx.signedAmount !== undefined ? tx.signedAmount : tx.amount;
+      const sign = amount >= 0 ? '+' : '';
+      return `${sign}€${Math.abs(amount).toFixed(2)}`;
     },
     getDirectionBadgeClass(tx) {
-      const direction = this.getTransactionDirection(tx);
-      switch (direction) {
-        case "Outgoing": return "bg-danger";
-        case "Incoming": return "bg-success";
-        case "Internal": return "bg-info";
-        default: return "bg-secondary";
+      switch (tx.direction) {
+        case "Outgoing": 
+          return "bg-danger";
+        case "Incoming": 
+          return "bg-success";
+        case "Internal": 
+          return "bg-info";
+        case "External":
+        default: 
+          return "bg-secondary";
       }
     },
     getAmountClass(tx) {
-      const direction = this.getTransactionDirection(tx);
-      return direction === "Outgoing" ? "text-danger" : direction === "Incoming" ? "text-success" : "";
+      switch (tx.direction) {
+        case "Outgoing": 
+          return "text-danger";
+        case "Incoming": 
+          return "text-success";
+        case "Internal": 
+          return "text-info";
+        default: 
+          return "";
+      }
     }
   },
   mounted() {
