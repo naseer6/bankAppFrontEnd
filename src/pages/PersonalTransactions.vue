@@ -1,7 +1,7 @@
 <template>
   <div>
     <h1 class="mb-4">
-      <i class="bi bi-receipt"></i> Personal Transactions
+      <i class="bi bi-receipt"></i> {{ isAdmin ? 'All Transactions' : 'Personal Transactions' }}
     </h1>
 
     <!-- Filters -->
@@ -40,6 +40,10 @@
           <label class="form-label">End Date</label>
           <input type="date" v-model="filters.endDate" class="form-control" />
         </div>
+        <div v-if="isAdmin" class="col-md-3">
+          <label class="form-label">Initiated By</label>
+          <input type="text" v-model="filters.initiatedBy" class="form-control" placeholder="Username" />
+        </div>
       </div>
       <div class="mt-3">
         <button class="btn btn-primary" @click="fetchTransactions">
@@ -67,18 +71,19 @@
         <table class="table table-striped">
           <thead>
             <tr>
-              <th>ID</th>
+              <th v-if="isAdmin">ID</th>
               <th>From IBAN</th>
               <th>To IBAN</th>
               <th>Amount (€)</th>
               <th>Date</th>
               <th>Type</th>
               <th>Direction</th>
+              <th>Initiated By</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="tx in transactions" :key="tx.id">
-              <td>{{ tx.id }}</td>
+              <td v-if="isAdmin">{{ tx.id }}</td>
               <td>{{ tx.fromIban }}</td>
               <td>{{ tx.toIban }}</td>
               <td class="fw-bold" :class="getAmountClass(tx)">
@@ -91,6 +96,7 @@
                   {{ tx.direction }}
                 </span>
               </td>
+              <td>{{ tx.initiatedBy || 'System' }}</td>
             </tr>
           </tbody>
         </table>
@@ -101,7 +107,7 @@
 
 <script>
 import api from "@/utils/api";
-import { getAuthToken } from "@/utils/auth";
+import { getUserRole } from "@/utils/auth";
 
 export default {
   name: "PersonalTransactions",
@@ -110,6 +116,7 @@ export default {
       transactions: [],
       isLoading: true,
       error: null,
+      isAdmin: false,
       filters: {
         iban: "",
         ibanType: "",
@@ -117,6 +124,7 @@ export default {
         comparator: ">",
         startDate: "",
         endDate: "",
+        initiatedBy: "",
       },
     };
   },
@@ -140,8 +148,13 @@ export default {
         }
         if (this.filters.startDate) params.append("start", this.filters.startDate);
         if (this.filters.endDate) params.append("end", this.filters.endDate);
+        if (this.isAdmin && this.filters.initiatedBy) {
+          params.append("initiatedBy", this.filters.initiatedBy);
+        }
 
-        const res = await api.get(`/transactions?${params.toString()}`);
+        // Use different endpoint for admin vs personal transactions
+        const endpoint = this.isAdmin ? `/transactions/all?${params.toString()}` : `/transactions?${params.toString()}`;
+        const res = await api.get(endpoint);
         this.transactions = res.data;
       } catch (err) {
         console.error(err);
@@ -158,6 +171,7 @@ export default {
         comparator: ">",
         startDate: "",
         endDate: "",
+        initiatedBy: "",
       };
       this.fetchTransactions();
     },
@@ -197,6 +211,17 @@ export default {
     }
   },
   mounted() {
+    // Check if user is admin/employee
+    const userRole = getUserRole();
+    console.log("User role from token:", userRole);
+    
+    this.isAdmin = userRole === 'EMPLOYEE' || 
+                   userRole === 'ADMIN' || 
+                   userRole === 'ROLE_EMPLOYEE' || 
+                   userRole === 'ROLE_ADMIN';
+    
+    console.log("Is admin:", this.isAdmin);
+    
     const iban = this.$route.query.iban;
     if (iban) {
       this.filters.iban = iban;
