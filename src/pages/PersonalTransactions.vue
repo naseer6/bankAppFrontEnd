@@ -75,7 +75,7 @@
               <th>From IBAN</th>
               <th>To IBAN</th>
               <th>Amount (€)</th>
-              <th>Date</th>
+              <th>Timestamp</th>
               <th>Type</th>
               <th>Direction</th>
               <th>Initiated By</th>
@@ -176,7 +176,7 @@ export default {
       this.fetchTransactions();
     },
     formatDate(dateStr) {
-      return new Date(dateStr).toLocaleDateString();
+      return new Date(dateStr).toLocaleString();
     },
     formatAmount(tx) {
       // Use signedAmount if available, otherwise fall back to regular amount
