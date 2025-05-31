@@ -162,36 +162,38 @@
           </div>
           <div class="modal-body">
             <table class="table table-borderless">
-              <tr>
-                <td class="text-muted">Account Type:</td>
-                <td class="fw-bold">{{ selectedAccount.type }}</td>
-              </tr>
-              <tr>
-                <td class="text-muted">IBAN:</td>
-                <td class="fw-bold">{{ selectedAccount.iban }}</td>
-              </tr>
-              <tr>
-                <td class="text-muted">Current Balance:</td>
-                <td class="fw-bold text-primary">€{{ selectedAccount.balance.toFixed(2) }}</td>
-              </tr>
-              <tr>
-                <td class="text-muted">Absolute Limit:</td>
-                <td class="fw-bold">€{{ selectedAccount.absoluteLimit.toFixed(2) }}</td>
-              </tr>
-              <tr>
-                <td class="text-muted">Daily Transfer Limit:</td>
-                <td class="fw-bold">€{{ selectedAccount.dailyLimit.toFixed(2) }}</td>
-              </tr>
-              <tr>
-                <td class="text-muted">Used Today:</td>
-                <td class="fw-bold">€{{ selectedAccount.dailySpent.toFixed(2) }}</td>
-              </tr>
-              <tr>
-                <td class="text-muted">Status:</td>
-                <td>
-                  <span class="badge bg-success">Active</span>
-                </td>
-              </tr>
+              <tbody>
+                <tr>
+                  <td class="text-muted">Account Type:</td>
+                  <td class="fw-bold">{{ selectedAccount.type }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">IBAN:</td>
+                  <td class="fw-bold">{{ selectedAccount.iban }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Current Balance:</td>
+                  <td class="fw-bold text-primary">€{{ selectedAccount.balance.toFixed(2) }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Absolute Limit:</td>
+                  <td class="fw-bold">€{{ selectedAccount.absoluteLimit.toFixed(2) }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Daily Transfer Limit:</td>
+                  <td class="fw-bold">€{{ selectedAccount.dailyLimit.toFixed(2) }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Used Today:</td>
+                  <td class="fw-bold">€{{ selectedAccount.dailySpent.toFixed(2) }}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Status:</td>
+                  <td>
+                    <span class="badge bg-success">Active</span>
+                  </td>
+                </tr>
+              </tbody>
             </table>
           </div>
           <div class="modal-footer">
@@ -234,11 +236,13 @@ const fetchData = async () => {
 
     // Fetch accounts
     const accountsRes = await api.get(`/accounts/user/${user.value.id}`)
-    accounts.value = accountsRes.data
-
-    // Fetch recent transactions
+    accounts.value = accountsRes.data    // Fetch recent transactions
     const transactionsRes = await api.get('/transactions')
-    recentTransactions.value = transactionsRes.data
+    
+    // Ensure transactionsRes.data is an array before filtering
+    const transactionsData = Array.isArray(transactionsRes.data) ? transactionsRes.data : []
+    
+    recentTransactions.value = transactionsData
       .filter(tx => {
         // Filter transactions related to user's accounts
         const userIbans = accounts.value.map(acc => acc.iban)
