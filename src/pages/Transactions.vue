@@ -1,8 +1,12 @@
 <template>
   <div>
-    <h1 class="mb-4">
-      <i class="bi bi-receipt"></i> {{ isAdmin ? 'All Transactions' : 'Personal Transactions' }}
-    </h1>
+    <div class="page-header">
+      <h1 class="page-title">
+        <i class="bi bi-receipt title-icon"></i> 
+        <span>{{ isAdmin ? 'All Transactions' : 'Personal Transactions' }}</span>
+      </h1>
+      <div class="title-divider"></div>
+    </div>
 
     <!-- Filters -->
     <div class="card p-3 shadow-sm mb-4">
@@ -66,40 +70,50 @@
       </div>
       <div v-else>
         <div class="mb-3">
-          <small class="text-muted">Found {{ transactions.length }} transaction(s)</small>
+          <small class="text-muted">Found {{ totalItems }} transaction(s)</small>
         </div>
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th v-if="isAdmin">ID</th>
-              <th>From IBAN</th>
-              <th>To IBAN</th>
-              <th>Amount (€)</th>
-              <th>Timestamp</th>
-              <th>Type</th>
-              <th>Direction</th>
-              <th>Initiated By</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="tx in transactions" :key="tx.id">
-              <td v-if="isAdmin">{{ tx.id }}</td>
-              <td>{{ tx.fromIban }}</td>
-              <td>{{ tx.toIban }}</td>
-              <td class="fw-bold" :class="getAmountClass(tx)">
-                {{ formatAmount(tx) }}
-              </td>
-              <td>{{ formatDate(tx.date) }}</td>
-              <td>{{ tx.description }}</td>
-              <td>
-                <span class="badge" :class="getDirectionBadgeClass(tx)">
-                  {{ tx.direction }}
-                </span>
-              </td>
-              <td>{{ tx.initiatedBy || 'System' }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-container">
+          <table class="transactions-table">
+            <thead>
+              <tr>
+                <th v-if="isAdmin">ID</th>
+                <th>From IBAN</th>
+                <th>To IBAN</th>
+                <th>Amount (€)</th>
+                <th>Timestamp</th>
+                <th>Type</th>
+                <th>Direction</th>
+                <th>Initiated By</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="tx in transactions" :key="tx.id">
+                <td v-if="isAdmin">{{ tx.id }}</td>
+                <td>{{ tx.fromIban || 'N/A' }}</td>
+                <td>{{ tx.toIban || 'N/A' }}</td>
+                <td class="fw-bold" :class="getAmountClass(tx)">
+                  €{{ (tx.signedAmount !== undefined ? tx.signedAmount : tx.amount).toFixed(2) }}
+                </td>
+                <td>{{ formatDate(tx.date) }}</td>
+                <td>{{ tx.description || 'N/A' }}</td>
+                <td>
+                  <span class="badge" :class="getDirectionBadgeClass(tx)">
+                    {{ tx.direction || 'N/A' }}
+                  </span>
+                </td>
+                <td>{{ tx.initiatedBy || 'System' }}</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <!-- Use the Pagination component -->
+          <Pagination
+            :currentPage="currentPage"
+            :totalPages="totalPages"
+            :totalItems="totalItems"
+            @page-changed="handlePageChange"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -108,15 +122,23 @@
 <script>
 import api from "@/utils/api";
 import { getUserRole } from "@/utils/auth";
+import Pagination from '@/components/Pagination.vue';
 
 export default {
   name: "PersonalTransactions",
+  components: {
+    Pagination
+  },
   data() {
     return {
       transactions: [],
       isLoading: true,
       error: null,
       isAdmin: false,
+      currentPage: 0,
+      totalPages: 0,
+      totalItems: 0,
+      pageSize: 10,
       filters: {
         iban: "",
         ibanType: "",
@@ -134,7 +156,10 @@ export default {
       this.error = null;
 
       try {
-        const params = new URLSearchParams();
+        const params = new URLSearchParams({
+          page: this.currentPage.toString(),
+          size: this.pageSize.toString(),
+        });
 
         if (this.filters.iban) {
           params.append("iban", this.filters.iban);
@@ -155,7 +180,37 @@ export default {
         // Use different endpoint for admin vs personal transactions
         const endpoint = this.isAdmin ? `/transactions/all?${params.toString()}` : `/transactions?${params.toString()}`;
         const res = await api.get(endpoint);
-        this.transactions = res.data;
+
+        console.log('API Response:', res.data); // Debug log
+
+        // Handle the new paginated response structure
+        if (res.data.transactions) {
+          this.transactions = res.data.transactions;
+          this.currentPage = res.data.currentPage;
+          this.totalPages = res.data.totalPages;
+          this.totalItems = res.data.totalItems;
+          
+          // Detect backend pagination issue - if total items equals page size, 
+          // it's likely filtering is happening in-memory after pagination
+          if (this.totalItems === this.pageSize && this.transactions.length === this.pageSize) {
+            console.warn('Possible backend pagination issue detected - total items suspiciously equals page size');
+            // For now, hide pagination to avoid confusion
+            this.totalPages = 1;
+          }
+        } else {
+          // Fallback for non-paginated response
+          this.transactions = res.data;
+          this.totalPages = 1;
+          this.totalItems = res.data.length;
+          this.currentPage = 0;
+        }
+        
+        console.log('Pagination state:', { 
+          currentPage: this.currentPage, 
+          totalPages: this.totalPages, 
+          totalItems: this.totalItems 
+        }); // Debug log
+
       } catch (err) {
         console.error(err);
         this.error = "Failed to load transactions.";
@@ -175,14 +230,12 @@ export default {
       };
       this.fetchTransactions();
     },
+    handlePageChange(newPage) {
+      this.currentPage = newPage;
+      this.fetchTransactions();
+    },
     formatDate(dateStr) {
       return new Date(dateStr).toLocaleString();
-    },
-    formatAmount(tx) {
-      // Use signedAmount if available, otherwise fall back to regular amount
-      const amount = tx.signedAmount !== undefined ? tx.signedAmount : tx.amount;
-      const sign = amount >= 0 ? '+' : '';
-      return `${sign}€${Math.abs(amount).toFixed(2)}`;
     },
     getDirectionBadgeClass(tx) {
       switch (tx.direction) {
@@ -232,11 +285,71 @@ export default {
 </script>
 
 <style scoped>
+.page-header {
+  margin-top: 2rem;
+  margin-bottom: 2.5rem;
+  text-align: center;
+}
+
+.page-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #1a252f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(44, 62, 80, 0.15);
+  background-color: rgba(44, 62, 80, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(44, 62, 80, 0.1);
+}
+
+.title-icon {
+  font-size: 2.2rem;
+  color: #2c3e50;
+  text-shadow: 0 2px 4px rgba(44, 62, 80, 0.3);
+}
+
+.title-divider {
+  width: 100px;
+  height: 4px;
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  margin: 1.5rem auto 0;
+  border-radius: 2px;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.3);
+}
+
 .table th, .table td {
   vertical-align: middle;
 }
 
 .fw-bold {
   font-weight: bold;
+}
+
+.table-container {
+  margin-top: 1rem;
+}
+
+.transactions-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.transactions-table th, .transactions-table td {
+  border: 1px solid #dee2e6;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.transactions-table th {
+  background-color: #f8f9fa;
+  font-weight: 500;
 }
 </style>
