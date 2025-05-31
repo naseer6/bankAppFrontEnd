@@ -29,7 +29,7 @@
             <RouterLink class="nav-link" to="/transfers">Transfers</RouterLink>
           </li>
           <li class="nav-item" v-if="auth.isLoggedIn">
-            <RouterLink class="nav-link" to="/personaltransactions">Transactions</RouterLink>
+            <RouterLink class="nav-link" to="/transactions">Transactions</RouterLink>
           </li>
           <li class="nav-item" v-if="auth.isLoggedIn && isAdmin">
             <RouterLink class="nav-link" to="/admin">Admin Panel</RouterLink>

@@ -17,7 +17,7 @@ import "./assets/main.css";
 
 import { createApp } from "vue";
 import App from "./App.vue";
-import PersonalTransactions from "./pages/PersonalTransactions.vue";
+import Transactions from "./pages/Transactions.vue";
 
 // Initialize auth token if it exists
 const token = getAuthToken();
@@ -55,8 +55,8 @@ const routes = [
     component: AccountOverview,
   },
   {
-    path: "/personaltransactions",
-    component: PersonalTransactions,
+    path: "/transactions",
+    component: Transactions,
   },
   {
     path: "/transfers",

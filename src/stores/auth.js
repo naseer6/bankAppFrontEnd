@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { getAuthToken, setAuthToken } from "@/utils/auth";
+import { getAuthToken, setAuthToken, getUserRole } from "@/utils/auth";
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
@@ -7,6 +7,11 @@ export const useAuthStore = defineStore("auth", {
   }),
   getters: {
     isLoggedIn: (state) => !!state.token,
+    userRole: () => getUserRole(),
+    isAdmin: () => {
+      const role = getUserRole();
+      return role === 'ADMIN' || role === 'EMPLOYEE';
+    },
   },
   actions: {
     setToken(token) {

@@ -93,7 +93,7 @@
                   <i class="bi bi-send"></i> Transfer
                 </router-link>
                 <router-link 
-                  :to="{ path: '/personaltransactions', query: { iban: account.iban } }"
+                  :to="{ path: '/transactions', query: { iban: account.iban } }"
                   class="btn btn-outline-primary btn-sm"
                 >
                   <i class="bi bi-clock-history"></i> History
@@ -114,7 +114,7 @@
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0">Recent Activity</h5>
-          <router-link to="/personaltransactions" class="btn btn-sm btn-outline-primary">
+          <router-link to="/transactions" class="btn btn-sm btn-outline-primary">
             View All
           </router-link>
         </div>

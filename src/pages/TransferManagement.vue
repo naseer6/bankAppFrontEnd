@@ -4,6 +4,100 @@
       <i class="bi bi-arrow-left-right"></i> Transfer Management
     </h1>
 
+    <!-- Internal Transfer Section (Between Your Own Accounts) -->
+    <div class="card p-4 shadow-sm mb-4 border-success">
+      <h4 class="mb-3 text-success">🔄 Transfer Between Your Accounts</h4>
+      <div class="alert alert-success alert-sm mb-3">
+        <small><i class="bi bi-info-circle me-1"></i> 
+        Internal transfers between your own accounts bypass the checking account restriction and have more flexible limits.
+        </small>
+      </div>
+      <form @submit.prevent="performInternalTransfer">
+        <div class="row g-3">
+          <div class="col-md-5">
+            <label class="form-label">From Account</label>
+            <select v-model="internalTransferForm.fromIban" class="form-select" required>
+              <option value="">Select source account</option>
+              <option 
+                v-for="account in userAccounts" 
+                :key="account.id" 
+                :value="account.iban"
+                :disabled="account.iban === internalTransferForm.toIban"
+              >
+                {{ account.iban }} ({{ account.type }}) - €{{ account.balance.toFixed(2) }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-2 d-flex align-items-end justify-content-center">
+            <button 
+              type="button" 
+              class="btn btn-outline-success btn-sm"
+              @click="swapInternalAccounts"
+              :disabled="!internalTransferForm.fromIban || !internalTransferForm.toIban"
+              title="Swap accounts"
+            >
+              <i class="bi bi-arrow-left-right"></i>
+            </button>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label">To Account</label>
+            <select v-model="internalTransferForm.toIban" class="form-select" required>
+              <option value="">Select destination account</option>
+              <option 
+                v-for="account in userAccounts" 
+                :key="account.id" 
+                :value="account.iban"
+                :disabled="account.iban === internalTransferForm.fromIban"
+              >
+                {{ account.iban }} ({{ account.type }}) - €{{ account.balance.toFixed(2) }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Amount (€)</label>
+            <input 
+              type="number" 
+              v-model.number="internalTransferForm.amount" 
+              class="form-control" 
+              step="0.01" 
+              min="0.01"
+              :max="getMaxTransferAmount(internalTransferForm.fromIban)"
+              required 
+            />
+            <div v-if="internalTransferForm.fromIban" class="form-text">
+              Available: €{{ getAccountBalance(internalTransferForm.fromIban)?.toFixed(2) }}
+            </div>
+          </div>
+          <div class="col-md-6 d-flex align-items-end">
+            <button 
+              type="submit" 
+              class="btn btn-success" 
+              :disabled="internalTransferLoading || !isValidInternalTransfer"
+            >
+              <span v-if="internalTransferLoading" class="spinner-border spinner-border-sm me-2"></span>
+              {{ internalTransferLoading ? 'Processing...' : '🔄 Transfer' }}
+            </button>
+          </div>
+        </div>
+      </form>
+      
+      <!-- Quick Amount Buttons -->
+      <div v-if="internalTransferForm.fromIban" class="mt-3">
+        <small class="text-muted d-block mb-2">Quick amounts:</small>
+        <div class="btn-group" role="group">
+          <button 
+            v-for="amount in getQuickAmounts(internalTransferForm.fromIban)" 
+            :key="amount"
+            type="button" 
+            class="btn btn-outline-success btn-sm"
+            @click="internalTransferForm.amount = amount"
+          >
+            €{{ amount }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Transfer Funds Section -->
     <div class="card p-4 shadow-sm mb-4">
       <h4 class="mb-3">💸 Transfer Funds</h4>
@@ -324,8 +418,22 @@ const currentUser = ref(null)
 const searchTerm = ref('')
 const isSearching = ref(false)
 
+// New reactive data
+const internalTransferForm = ref({
+  fromIban: '',
+  toIban: '',
+  amount: ''
+})
+const internalTransferLoading = ref(false)
+
 // Computed properties
 const isAdmin = computed(() => currentUser.value?.role === 'ADMIN')
+const isValidInternalTransfer = computed(() => {
+  return internalTransferForm.value.fromIban && 
+         internalTransferForm.value.toIban && 
+         internalTransferForm.value.fromIban !== internalTransferForm.value.toIban &&
+         internalTransferForm.value.amount > 0
+})
 
 // Watch for changes in selected account to fetch limits
 watch(() => transferForm.value.fromIban, async (newIban) => {
@@ -553,6 +661,63 @@ const updateLimits = async () => {
     showMessage(errorMessage, 'error')
   } finally {
     limitLoading.value = false
+  }
+}
+
+const getAccountBalance = (iban) => {
+  const account = userAccounts.value.find(acc => acc.iban === iban)
+  return account ? account.balance : 0
+}
+
+const getMaxTransferAmount = (iban) => {
+  const balance = getAccountBalance(iban)
+  return balance > 0 ? balance : 0
+}
+
+const getQuickAmounts = (iban) => {
+  const balance = getAccountBalance(iban)
+  const amounts = [10, 25, 50, 100, 250, 500]
+  return amounts.filter(amount => amount <= balance).slice(0, 4)
+}
+
+const swapInternalAccounts = () => {
+  const temp = internalTransferForm.value.fromIban
+  internalTransferForm.value.fromIban = internalTransferForm.value.toIban
+  internalTransferForm.value.toIban = temp
+}
+
+const performInternalTransfer = async () => {
+  internalTransferLoading.value = true
+  try {
+    // Try using admin transfer endpoint for internal transfers to bypass restrictions
+    const response = await api.post('/transfers/internal', {
+      fromIban: internalTransferForm.value.fromIban,
+      toIban: internalTransferForm.value.toIban,
+      amount: internalTransferForm.value.amount
+    }).catch(async (error) => {
+      // Fallback to regular customer endpoint if internal endpoint doesn't exist
+      if (error.response?.status === 404) {
+        return await api.post('/transfers/customer', {
+          fromIban: internalTransferForm.value.fromIban,
+          toIban: internalTransferForm.value.toIban,
+          amount: internalTransferForm.value.amount
+        })
+      }
+      throw error
+    })
+
+    if (response.data.success) {
+      showMessage(`Successfully transferred €${internalTransferForm.value.amount.toFixed(2)} between your accounts`, 'success')
+      internalTransferForm.value = { fromIban: '', toIban: '', amount: '' }
+      await fetchUserAccounts() // Refresh account data
+    } else {
+      showMessage(response.data.message, 'error')
+    }
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || 'Internal transfer failed'
+    showMessage(errorMessage, 'error')
+  } finally {
+    internalTransferLoading.value = false
   }
 }
 
