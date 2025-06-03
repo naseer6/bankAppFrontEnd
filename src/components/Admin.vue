@@ -62,11 +62,6 @@
           <i class="bi bi-arrow-left-right"></i> Admin Transfers
         </a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#transactions">
-          <i class="bi bi-clock-history"></i> All Transactions
-        </a>
-      </li>
     </ul>
 
     <!-- Tab Content -->
@@ -376,91 +371,6 @@
           </div>
         </div>
       </div>
-
-      <!-- All Transactions Tab -->
-      <div class="tab-pane fade" id="transactions">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title mb-4">System-wide Transactions</h5>
-            
-            <!-- Transaction Filters -->
-            <div class="row mb-3 g-2">
-              <div class="col-md-3">
-                <input 
-                  type="text" 
-                  v-model="transactionFilters.iban" 
-                  class="form-control"
-                  placeholder="Filter by IBAN"
-                >
-              </div>
-              <div class="col-md-2">
-                <input 
-                  type="number" 
-                  v-model.number="transactionFilters.amount" 
-                  class="form-control"
-                  placeholder="Amount"
-                >
-              </div>
-              <div class="col-md-2">
-                <select v-model="transactionFilters.comparator" class="form-select">
-                  <option value=">">Greater than</option>
-                  <option value="<">Less than</option>
-                  <option value="=">Equal to</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <input 
-                  type="date" 
-                  v-model="transactionFilters.startDate" 
-                  class="form-control"
-                >
-              </div>
-              <div class="col-md-2">
-                <input 
-                  type="date" 
-                  v-model="transactionFilters.endDate" 
-                  class="form-control"
-                >
-              </div>
-              <div class="col-md-1">
-                <button class="btn btn-primary w-100" @click="fetchTransactions">
-                  <i class="bi bi-search"></i>
-                </button>
-              </div>
-            </div>
-
-            <!-- Transactions Table -->
-            <div class="table-responsive">
-              <table class="table table-sm">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Date/Time</th>
-                    <th>From</th>
-                    <th>To</th>
-                    <th>Amount</th>
-                    <th>Type</th>
-                    <th>Initiated By</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="tx in transactions" :key="tx.id">
-                    <td>{{ tx.id }}</td>
-                    <td>{{ formatDateTime(tx.timestamp || tx.date) }}</td>
-                    <td>{{ tx.fromIban || 'N/A' }}</td>
-                    <td>{{ tx.toIban || 'N/A' }}</td>
-                    <td class="fw-bold">€{{ tx.amount?.toFixed(2) }}</td>
-                    <td>
-                      <span class="badge bg-secondary">{{ tx.description || tx.transactionType }}</span>
-                    </td>
-                    <td>{{ tx.initiatedBy || 'System' }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- Account Details Modal -->
@@ -633,7 +543,6 @@ const pendingUsers = ref([])
 const allAccounts = ref([])
 const filteredAccounts = ref([])
 const approvedUsers = ref([])
-const transactions = ref([])
 const accountTransactions = ref([])
 const selectedAccount = ref(null)
 const selectedAccountLimits = ref(null)
@@ -681,14 +590,6 @@ const accountFilters = ref({
   search: '',
   type: '',
   status: ''
-})
-
-const transactionFilters = ref({
-  iban: '',
-  amount: '',
-  comparator: '>',
-  startDate: '',
-  endDate: ''
 })
 
 // Bootstrap modal instances
@@ -781,26 +682,6 @@ const fetchAccountLimits = async (iban) => {
   }
 }
 
-const fetchTransactions = async () => {
-  try {
-    const params = new URLSearchParams()
-    if (transactionFilters.value.iban) params.append('iban', transactionFilters.value.iban)
-    if (transactionFilters.value.amount) {
-      params.append('amount', transactionFilters.value.amount)
-      params.append('comparator', transactionFilters.value.comparator)
-    }
-    if (transactionFilters.value.startDate) params.append('start', transactionFilters.value.startDate)
-    if (transactionFilters.value.endDate) params.append('end', transactionFilters.value.endDate)
-
-    const response = await axios.get(`${API_BASE_URL}/api/transactions?${params}`, {
-      headers: { Authorization: `Bearer ${getAuthToken()}` }
-    })
-    transactions.value = response.data
-  } catch (error) {
-    showMessage('Failed to fetch transactions', 'error')
-  }
-}
-
 const filterAccounts = () => {
   let result = allAccounts.value
 
@@ -852,13 +733,13 @@ const viewAccountDetails = async (account) => {
 }
 
 const viewAccountTransactions = async (account) => {
-  transactionFilters.value.iban = account.iban
-  await fetchTransactions()
-  // Switch to transactions tab
-  const transactionsTab = document.querySelector('a[href="#transactions"]')
-  if (transactionsTab) {
-    transactionsTab.click()
-  }
+  // Removed logic to filter and fetch transactions and switch to transactions tab
+  // transactionFilters.value.iban = account.iban
+  // await fetchTransactions()
+  // const transactionsTab = document.querySelector('a[href="#transactions"]')
+  // if (transactionsTab) {
+  //   transactionsTab.click()
+  // }
 }
 
 const closeAccount = async (account) => {
@@ -1034,7 +915,6 @@ onMounted(async () => {
   await fetchPendingUsers()
   await fetchAllAccounts()
   await fetchApprovedUsers()
-  await fetchTransactions()
 })
 </script>
 
