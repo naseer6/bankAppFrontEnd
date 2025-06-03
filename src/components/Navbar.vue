@@ -49,7 +49,7 @@
 <script setup>
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import api from "@/utils/api";
 
 const router = useRouter();
@@ -63,7 +63,10 @@ const checkUserRole = async () => {
       isAdmin.value = response.data.role === 'ADMIN';
     } catch (error) {
       console.error('Failed to fetch user role:', error);
+      isAdmin.value = false;
     }
+  } else {
+    isAdmin.value = false;
   }
 };
 
@@ -73,6 +76,14 @@ const logout = () => {
 };
 
 onMounted(checkUserRole);
+
+// Watch for login/logout to update role instantly
+watch(
+  () => auth.isLoggedIn,
+  (loggedIn) => {
+    checkUserRole();
+  }
+);
 </script>
 
 <style scoped>
