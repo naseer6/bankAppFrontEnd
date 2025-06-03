@@ -19,42 +19,12 @@
     <!-- Profile Content -->
     <div v-else-if="user" class="row justify-content-center">
       <div class="col-lg-8 col-xl-6">
-          <!-- Admin Profile Header -->
-        <div v-if="user.role === 'ADMIN'" class="card border-primary mb-4 shadow-lg admin-card">
-          <div class="card-header bg-gradient-primary text-white">
-            <h4 class="card-title mb-0">
-              <i class="bi bi-shield-fill-check me-2"></i>
-              Administrator Profile
-            </h4>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-sm-6">
-                <p class="mb-2">
-                  <i class="bi bi-person-circle me-2 text-primary"></i>
-                  <strong>Username:</strong> {{ user.username }}
-                </p>
-              </div>
-              <div class="col-sm-6">
-                <p class="mb-0">
-                  <i class="bi bi-check-circle-fill me-2" :class="user.approved ? 'text-success' : 'text-info'"></i>
-                  <strong>Status:</strong>
-                  <span v-if="user.approved" class="badge bg-success ms-1">
-                    <i class="bi bi-check-lg me-1"></i>Approved
-                  </span>
-                  <span v-else class="badge bg-info ms-1">
-                    <i class="bi bi-clock me-1"></i>Pending Approval
-                  </span>
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>        <!-- Main User Profile Card -->
+        <!-- Main User Profile Card -->
         <div class="card shadow-lg main-profile-card">
           <div class="card-header bg-gradient-primary">
             <h3 class="card-title mb-0 text-black">
               <i class="bi bi-person-fill me-2"></i>
-              User Profile
+              User Profile<span v-if="user.role === 'ADMIN'"> (Admin)</span>
             </h3>
           </div>
           <div class="card-body p-4">

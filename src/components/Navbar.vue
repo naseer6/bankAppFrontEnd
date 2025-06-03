@@ -22,7 +22,7 @@
           <li class="nav-item">
             <RouterLink class="nav-link" to="/profile">Profile</RouterLink>
           </li>
-          <li class="nav-item" v-if="auth.isLoggedIn">
+          <li class="nav-item" v-if="auth.isLoggedIn && !isAdmin">
             <RouterLink class="nav-link" to="/accountoverview">Account Details</RouterLink>
           </li>
           <li class="nav-item" v-if="auth.isLoggedIn">

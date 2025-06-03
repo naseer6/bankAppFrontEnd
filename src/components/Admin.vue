@@ -732,16 +732,6 @@ const viewAccountDetails = async (account) => {
   accountDetailsModal.show()
 }
 
-const viewAccountTransactions = async (account) => {
-  // Removed logic to filter and fetch transactions and switch to transactions tab
-  // transactionFilters.value.iban = account.iban
-  // await fetchTransactions()
-  // const transactionsTab = document.querySelector('a[href="#transactions"]')
-  // if (transactionsTab) {
-  //   transactionsTab.click()
-  // }
-}
-
 const closeAccount = async (account) => {
   if (!confirm(`Are you sure you want to close account ${account.iban}?`)) return
   

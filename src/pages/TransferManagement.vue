@@ -4,191 +4,194 @@
       <i class="bi bi-arrow-left-right"></i> Transfer Management
     </h1>
 
-    <!-- Internal Transfer Section (Between Your Own Accounts) -->
-    <div class="card p-4 shadow-sm mb-4 border-success">
-      <h4 class="mb-3 text-success">🔄 Transfer Between Your Accounts</h4>
-      <div class="alert alert-success alert-sm mb-3">
-        <small><i class="bi bi-info-circle me-1"></i> 
-        Internal transfers between your own accounts bypass the checking account restriction and have more flexible limits.
-        </small>
-      </div>
-      <form @submit.prevent="performInternalTransfer">
-        <div class="row g-3">
-          <div class="col-md-5">
-            <label class="form-label">From Account</label>
-            <select v-model="internalTransferForm.fromIban" class="form-select" required>
-              <option value="">Select source account</option>
-              <option 
-                v-for="account in userAccounts" 
-                :key="account.id" 
-                :value="account.iban"
-                :disabled="account.iban === internalTransferForm.toIban"
+    <!-- Only show to non-admin users -->
+    <div v-if="!isAdmin">
+      <!-- Internal Transfer Section (Between Your Own Accounts) -->
+      <div class="card p-4 shadow-sm mb-4 border-success">
+        <h4 class="mb-3 text-success">🔄 Transfer Between Your Accounts</h4>
+        <div class="alert alert-success alert-sm mb-3">
+          <small><i class="bi bi-info-circle me-1"></i> 
+          Internal transfers between your own accounts bypass the checking account restriction and have more flexible limits.
+          </small>
+        </div>
+        <form @submit.prevent="performInternalTransfer">
+          <div class="row g-3">
+            <div class="col-md-5">
+              <label class="form-label">From Account</label>
+              <select v-model="internalTransferForm.fromIban" class="form-select" required>
+                <option value="">Select source account</option>
+                <option 
+                  v-for="account in userAccounts" 
+                  :key="account.id" 
+                  :value="account.iban"
+                  :disabled="account.iban === internalTransferForm.toIban"
+                >
+                  {{ account.iban }} ({{ account.type }}) - €{{ account.balance.toFixed(2) }}
+                </option>
+              </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end justify-content-center">
+              <button 
+                type="button" 
+                class="btn btn-outline-success btn-sm"
+                @click="swapInternalAccounts"
+                :disabled="!internalTransferForm.fromIban || !internalTransferForm.toIban"
+                title="Swap accounts"
               >
-                {{ account.iban }} ({{ account.type }}) - €{{ account.balance.toFixed(2) }}
-              </option>
-            </select>
-          </div>
-          <div class="col-md-2 d-flex align-items-end justify-content-center">
-            <button 
-              type="button" 
-              class="btn btn-outline-success btn-sm"
-              @click="swapInternalAccounts"
-              :disabled="!internalTransferForm.fromIban || !internalTransferForm.toIban"
-              title="Swap accounts"
-            >
-              <i class="bi bi-arrow-left-right"></i>
-            </button>
-          </div>
-          <div class="col-md-5">
-            <label class="form-label">To Account</label>
-            <select v-model="internalTransferForm.toIban" class="form-select" required>
-              <option value="">Select destination account</option>
-              <option 
-                v-for="account in userAccounts" 
-                :key="account.id" 
-                :value="account.iban"
-                :disabled="account.iban === internalTransferForm.fromIban"
+                <i class="bi bi-arrow-left-right"></i>
+              </button>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label">To Account</label>
+              <select v-model="internalTransferForm.toIban" class="form-select" required>
+                <option value="">Select destination account</option>
+                <option 
+                  v-for="account in userAccounts" 
+                  :key="account.id" 
+                  :value="account.iban"
+                  :disabled="account.iban === internalTransferForm.fromIban"
+                >
+                  {{ account.iban }} ({{ account.type }}) - €{{ account.balance.toFixed(2) }}
+                </option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Amount (€)</label>
+              <input 
+                type="number" 
+                v-model.number="internalTransferForm.amount" 
+                class="form-control" 
+                step="0.01" 
+                min="0.01"
+                :max="getMaxTransferAmount(internalTransferForm.fromIban)"
+                required 
+              />
+              <div v-if="internalTransferForm.fromIban" class="form-text">
+                Available: €{{ getAccountBalance(internalTransferForm.fromIban)?.toFixed(2) }}
+              </div>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+              <button 
+                type="submit" 
+                class="btn btn-success" 
+                :disabled="internalTransferLoading || !isValidInternalTransfer"
               >
-                {{ account.iban }} ({{ account.type }}) - €{{ account.balance.toFixed(2) }}
-              </option>
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Amount (€)</label>
-            <input 
-              type="number" 
-              v-model.number="internalTransferForm.amount" 
-              class="form-control" 
-              step="0.01" 
-              min="0.01"
-              :max="getMaxTransferAmount(internalTransferForm.fromIban)"
-              required 
-            />
-            <div v-if="internalTransferForm.fromIban" class="form-text">
-              Available: €{{ getAccountBalance(internalTransferForm.fromIban)?.toFixed(2) }}
+                <span v-if="internalTransferLoading" class="spinner-border spinner-border-sm me-2"></span>
+                {{ internalTransferLoading ? 'Processing...' : '🔄 Transfer' }}
+              </button>
             </div>
           </div>
-          <div class="col-md-6 d-flex align-items-end">
+        </form>
+        
+        <!-- Quick Amount Buttons -->
+        <div v-if="internalTransferForm.fromIban" class="mt-3">
+          <small class="text-muted d-block mb-2">Quick amounts:</small>
+          <div class="btn-group" role="group">
             <button 
-              type="submit" 
-              class="btn btn-success" 
-              :disabled="internalTransferLoading || !isValidInternalTransfer"
+              v-for="amount in getQuickAmounts(internalTransferForm.fromIban)" 
+              :key="amount"
+              type="button" 
+              class="btn btn-outline-success btn-sm"
+              @click="internalTransferForm.amount = amount"
             >
-              <span v-if="internalTransferLoading" class="spinner-border spinner-border-sm me-2"></span>
-              {{ internalTransferLoading ? 'Processing...' : '🔄 Transfer' }}
+              €{{ amount }}
             </button>
           </div>
         </div>
-      </form>
-      
-      <!-- Quick Amount Buttons -->
-      <div v-if="internalTransferForm.fromIban" class="mt-3">
-        <small class="text-muted d-block mb-2">Quick amounts:</small>
-        <div class="btn-group" role="group">
-          <button 
-            v-for="amount in getQuickAmounts(internalTransferForm.fromIban)" 
-            :key="amount"
-            type="button" 
-            class="btn btn-outline-success btn-sm"
-            @click="internalTransferForm.amount = amount"
-          >
-            €{{ amount }}
-          </button>
-        </div>
       </div>
-    </div>
 
-    <!-- Transfer Funds Section -->
-    <div class="card p-4 shadow-sm mb-4">
-      <h4 class="mb-3">💸 Transfer Funds</h4>
-      <form @submit.prevent="performTransfer">
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label">From Account (IBAN)</label>
-            <select v-model="transferForm.fromIban" class="form-select" required>
-              <option value="">Select your account</option>
-              <option 
-                v-for="account in userAccounts.filter(acc => acc.type === 'CHECKING')" 
-                :key="account.id" 
-                :value="account.iban"
-              >
-                {{ account.iban }} ({{ account.type }}) - €{{ account.balance.toFixed(2) }}
-              </option>
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">To Account (IBAN)</label>
-            <input 
-              type="text" 
-              v-model="transferForm.toIban" 
-              class="form-control" 
-              placeholder="Enter destination IBAN"
-              required 
-            />
-          </div>
-          
-          <!-- New Account Search Section -->
-          <div class="col-12 mt-2">
-            <div class="card border-light">
-              <div class="card-body p-3">
-                <h6 class="card-title mb-3">🔍 Find Account by Name or IBAN</h6>
-                <div class="input-group">
-                  <input 
-                    type="text" 
-                    v-model="searchTerm" 
-                    class="form-control" 
-                    placeholder="Enter customer name"
-                    @keyup.enter="searchAccounts"
-                  />
-                  <button 
-                    type="button" 
-                    class="btn btn-outline-primary" 
-                    @click="searchAccounts"
-                  >
-                    <i class="bi bi-search me-1"></i> Search
-                  </button>
-                </div>
-                <div v-if="isSearching" class="mt-2 text-center">
-                  <div class="spinner-border spinner-border-sm text-primary" role="status">
-                    <span class="visually-hidden">Searching...</span>
+      <!-- Transfer Funds Section -->
+      <div class="card p-4 shadow-sm mb-4">
+        <h4 class="mb-3">💸 Transfer Funds</h4>
+        <form @submit.prevent="performTransfer">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">From Account (IBAN)</label>
+              <select v-model="transferForm.fromIban" class="form-select" required>
+                <option value="">Select your account</option>
+                <option 
+                  v-for="account in userAccounts.filter(acc => acc.type === 'CHECKING')" 
+                  :key="account.id" 
+                  :value="account.iban"
+                >
+                  {{ account.iban }} ({{ account.type }}) - €{{ account.balance.toFixed(2) }}
+                </option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">To Account (IBAN)</label>
+              <input 
+                type="text" 
+                v-model="transferForm.toIban" 
+                class="form-control" 
+                placeholder="Enter destination IBAN"
+                required 
+              />
+            </div>
+            
+            <!-- New Account Search Section -->
+            <div class="col-12 mt-2">
+              <div class="card border-light">
+                <div class="card-body p-3">
+                  <h6 class="card-title mb-3">🔍 Find Account by Name or IBAN</h6>
+                  <div class="input-group">
+                    <input 
+                      type="text" 
+                      v-model="searchTerm" 
+                      class="form-control" 
+                      placeholder="Enter customer name"
+                      @keyup.enter="searchAccounts"
+                    />
+                    <button 
+                      type="button" 
+                      class="btn btn-outline-primary" 
+                      @click="searchAccounts"
+                    >
+                      <i class="bi bi-search me-1"></i> Search
+                    </button>
                   </div>
-                  <span class="ms-2">Searching...</span>
+                  <div v-if="isSearching" class="mt-2 text-center">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                      <span class="visually-hidden">Searching...</span>
+                    </div>
+                    <span class="ms-2">Searching...</span>
+                  </div>
                 </div>
               </div>
             </div>
+            
+            <div class="col-md-6">
+              <label class="form-label">Amount (€)</label>
+              <input 
+                type="number" 
+                v-model.number="transferForm.amount" 
+                class="form-control" 
+                step="0.01" 
+                min="0.01"
+                required 
+              />
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary" :disabled="transferLoading">
+                <span v-if="transferLoading" class="spinner-border spinner-border-sm me-2"></span>
+                {{ transferLoading ? 'Processing...' : '💸 Transfer Funds' }}
+              </button>
+            </div>
           </div>
-          
-          <div class="col-md-6">
-            <label class="form-label">Amount (€)</label>
-            <input 
-              type="number" 
-              v-model.number="transferForm.amount" 
-              class="form-control" 
-              step="0.01" 
-              min="0.01"
-              required 
-            />
-          </div>
-          <div class="col-md-6 d-flex align-items-end">
-            <button type="submit" class="btn btn-primary" :disabled="transferLoading">
-              <span v-if="transferLoading" class="spinner-border spinner-border-sm me-2"></span>
-              {{ transferLoading ? 'Processing...' : '💸 Transfer Funds' }}
-            </button>
-          </div>
-        </div>
-      </form>
+        </form>
 
-      <!-- Transfer Limits Info -->
-      <div v-if="selectedAccountLimits" class="alert alert-info mt-3">
-        <h6>Account Limits for {{ transferForm.fromIban }}:</h6>
-        <div class="row">
-          <div class="col-md-6">
-            <small><strong>Available Balance:</strong> €{{ selectedAccountLimits.availableBalance?.toFixed(2) }}</small><br>
-            <small><strong>Absolute Limit:</strong> €{{ selectedAccountLimits.absoluteLimit?.toFixed(2) }}</small>
-          </div>
-          <div class="col-md-6">
-            <small><strong>Daily Limit:</strong> €{{ selectedAccountLimits.dailyLimit?.toFixed(2) }}</small><br>
-            <small><strong>Remaining Today:</strong> €{{ selectedAccountLimits.remainingDailyLimit?.toFixed(2) }}</small>
+        <!-- Transfer Limits Info -->
+        <div v-if="selectedAccountLimits" class="alert alert-info mt-3">
+          <h6>Account Limits for {{ transferForm.fromIban }}:</h6>
+          <div class="row">
+            <div class="col-md-6">
+              <small><strong>Available Balance:</strong> €{{ selectedAccountLimits.availableBalance?.toFixed(2) }}</small><br>
+              <small><strong>Absolute Limit:</strong> €{{ selectedAccountLimits.absoluteLimit?.toFixed(2) }}</small>
+            </div>
+            <div class="col-md-6">
+              <small><strong>Daily Limit:</strong> €{{ selectedAccountLimits.dailyLimit?.toFixed(2) }}</small><br>
+              <small><strong>Remaining Today:</strong> €{{ selectedAccountLimits.remainingDailyLimit?.toFixed(2) }}</small>
+            </div>
           </div>
         </div>
       </div>
