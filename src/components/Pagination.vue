@@ -1,9 +1,9 @@
 <template>
-  <div class="pagination-wrapper" v-if="totalPages > 1">
+  <div class="pagination-wrapper" v-if="totalItems > 0">
     <div class="pagination-container">
       <button 
         @click="goToPage(currentPage - 1)" 
-        :disabled="currentPage === 0"
+        :disabled="currentPage === 0 || totalPages <= 1"
         class="pagination-btn nav-btn"
       >
         <i class="arrow-left"></i>
@@ -14,8 +14,8 @@
         <button
           v-for="page in visiblePages"
           :key="page"
-          @click="goToPage(page - 1)"
-          :class="['page-btn', { active: page - 1 === currentPage }]"
+          @click="totalPages > 1 ? goToPage(page - 1) : null"
+          :class="['page-btn', { active: page - 1 === currentPage, disabled: totalPages <= 1 }]"
         >
           {{ page }}
         </button>
@@ -23,7 +23,7 @@
       
       <button 
         @click="goToPage(currentPage + 1)" 
-        :disabled="currentPage >= totalPages - 1"
+        :disabled="currentPage >= totalPages - 1 || totalPages <= 1"
         class="pagination-btn nav-btn"
       >
         <span>Next</span>
@@ -183,6 +183,23 @@ export default {
   border-color: #007bff;
   box-shadow: 0 3px 8px rgba(0, 123, 255, 0.4);
   transform: translateY(-1px);
+}
+
+.page-btn.disabled {
+  background: #f8f9fa;
+  color: #6c757d;
+  border-color: #dee2e6;
+  cursor: not-allowed;
+  opacity: 0.7;
+  transform: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.page-btn.disabled:hover {
+  background: #f8f9fa;
+  border-color: #dee2e6;
+  transform: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .pagination-info {

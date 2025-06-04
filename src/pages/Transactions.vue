@@ -23,17 +23,16 @@
             <option value="from">From Account</option>
             <option value="to">To Account</option>
           </select>
-        </div>
-        <div class="col-md-2">
+        </div>        <div class="col-md-1">
           <label class="form-label">Amount</label>
           <input type="number" v-model.number="filters.amount" class="form-control" />
         </div>
-        <div class="col-md-1">
+        <div class="col-md-2">
           <label class="form-label">Comparator</label>
           <select v-model="filters.comparator" class="form-select">
-            <option value=">">></option>
-            <option value="<"><</option>
-            <option value="=">=</option>
+            <option value=">">Greater than</option>
+            <option value="<">Less than</option>
+            <option value="=">Equal to</option>
           </select>
         </div>
         <div class="col-md-2">
