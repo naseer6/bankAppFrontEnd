@@ -489,7 +489,7 @@ const fetchAccountLimits = async (iban) => {
 const performTransfer = async () => {
   transferLoading.value = true
   try {
-    const response = await api.post('/transfers/customer', {
+    const response = await api.post('/transactions/customer', {
       fromIban: transferForm.value.fromIban,
       toIban: transferForm.value.toIban,
       amount: transferForm.value.amount
@@ -514,7 +514,7 @@ const performTransfer = async () => {
 const performAdminTransfer = async () => {
   adminTransferLoading.value = true
   try {
-    const response = await api.post('/transfers/admin', {
+    const response = await api.post('/transactions/admin', {
       fromIban: adminTransferForm.value.fromIban,
       toIban: adminTransferForm.value.toIban,
       amount: adminTransferForm.value.amount
@@ -543,7 +543,7 @@ const makeDeposit = async () => {
 
   actionLoading.value = true
   try {
-    const response = await api.post('/transfers/deposit', {
+    const response = await api.post('/transactions/deposit', {
       iban: quickActions.value.depositIban,
       amount: quickActions.value.depositAmount
     })
@@ -571,7 +571,7 @@ const makeWithdrawal = async () => {
 
   actionLoading.value = true
   try {
-    const response = await api.post('/transfers/withdraw', {
+    const response = await api.post('/transactions/withdraw', {
       iban: quickActions.value.withdrawIban,
       amount: quickActions.value.withdrawAmount
     })
@@ -693,14 +693,14 @@ const performInternalTransfer = async () => {
   internalTransferLoading.value = true
   try {
     // Try using admin transfer endpoint for internal transfers to bypass restrictions
-    const response = await api.post('/transfers/internal', {
+    const response = await api.post('/transactions/internal', {
       fromIban: internalTransferForm.value.fromIban,
       toIban: internalTransferForm.value.toIban,
       amount: internalTransferForm.value.amount
     }).catch(async (error) => {
       // Fallback to regular customer endpoint if internal endpoint doesn't exist
       if (error.response?.status === 404) {
-        return await api.post('/transfers/customer', {
+        return await api.post('/transactions/customer', {
           fromIban: internalTransferForm.value.fromIban,
           toIban: internalTransferForm.value.toIban,
           amount: internalTransferForm.value.amount

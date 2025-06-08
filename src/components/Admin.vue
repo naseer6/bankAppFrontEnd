@@ -780,7 +780,7 @@ const updateAccountLimits = async () => {
 const performAdminTransfer = async () => {
   transferLoading.value = true
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/transfers/admin`, {
+    const response = await axios.post(`${API_BASE_URL}/api/transactions/admin`, {
       fromIban: adminTransfer.value.fromIban,
       toIban: adminTransfer.value.toIban,
       amount: adminTransfer.value.amount
@@ -811,7 +811,7 @@ const performQuickDeposit = async () => {
 
   depositLoading.value = true
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/transfers/deposit`, {
+    const response = await axios.post(`${API_BASE_URL}/api/transactions/deposit`, {
       iban: quickDeposit.value.iban,
       amount: quickDeposit.value.amount
     }, {
@@ -840,7 +840,7 @@ const performQuickWithdraw = async () => {
 
   withdrawLoading.value = true
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/transfers/withdraw`, {
+    const response = await axios.post(`${API_BASE_URL}/api/transactions/withdraw`, {
       iban: quickWithdraw.value.iban,
       amount: quickWithdraw.value.amount
     }, {
