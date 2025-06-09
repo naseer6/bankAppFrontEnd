@@ -474,7 +474,7 @@ const quickWithdraw = async (amount) => {
 
   transactionLoading.value = true
   try {
-    const res = await axios.post(`${API}/api/transactions/atm/withdraw`, {
+    const res = await axios.post(`${API}/api/transactions/withdraw`, {
       iban: selectedAccount.value.iban,
       amount: amount
     }, {
@@ -516,21 +516,21 @@ const performCustomTransaction = async () => {
 
     switch (transactionType.value) {
       case 'withdraw':
-        endpoint = '/api/transactions/atm/withdraw'
+        endpoint = '/api/transactions/withdraw'
         payload = {
           iban: selectedAccount.value.iban,
           amount: customAmount.value
         }
         break
       case 'deposit':
-        endpoint = '/api/transactions/atm/deposit'
+        endpoint = '/api/transactions/deposit'
         payload = {
           iban: selectedAccount.value.iban,
           amount: customAmount.value
         }
         break
       case 'transfer':
-        endpoint = '/api/transactions/atm/transfer'
+        endpoint = '/api/transactions/transfer'
         payload = {
           fromIban: selectedAccount.value.iban,
           toIban: transferToIban.value,
