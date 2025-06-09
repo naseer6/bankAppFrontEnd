@@ -130,6 +130,7 @@
 <script>
 import axios from "axios";
 import { getAuthToken } from "@/utils/auth";
+import { API_ENDPOINTS } from "@/config";
 
 export default {
   data() {
@@ -148,7 +149,7 @@ export default {
         return;
       }
 
-      const res = await axios.get("http://localhost:8080/api/users/me", {
+      const res = await axios.get(API_ENDPOINTS.users.me, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

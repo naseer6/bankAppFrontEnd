@@ -312,6 +312,7 @@
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import { getAuthToken } from '@/utils/auth';
+import { API_ENDPOINTS } from '@/config';
 
 export default {
   setup() {
@@ -337,9 +338,6 @@ export default {
     let transactionsModal = null;
     let closeModal = null;
     let errorToast = null;
-    
-    // API base URL
-    const API_BASE_URL = 'http://localhost:8080';
     
     // Computed properties
     const filteredAccounts = computed(() => {
@@ -382,7 +380,7 @@ export default {
     const fetchAccounts = async () => {
       loading.value = true;
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/admin/accounts`, {
+        const response = await axios.get(API_ENDPOINTS.admin.accounts, {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`
           }
@@ -410,7 +408,7 @@ export default {
       transactionsModal.show();
       
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/admin/accounts/${account.id}/transactions`, {
+        const response = await axios.get(API_ENDPOINTS.admin.accountTransactions(account.id), {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`
           }
@@ -440,7 +438,7 @@ export default {
       isClosingAccount.value = true;
       
       try {
-        await axios.post(`${API_BASE_URL}/api/admin/accounts/${accountToClose.value.id}/close`, {}, {
+        await axios.post(API_ENDPOINTS.admin.closeAccount(accountToClose.value.id), {}, {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`
           }

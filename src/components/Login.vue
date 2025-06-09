@@ -24,6 +24,7 @@ import axios from "axios";
 import Notification from "./Notification.vue";
 import Loading from "./Loading.vue";
 import { useAuthStore } from "@/stores/auth";
+import { API_ENDPOINTS } from "@/config";
 
 export default {
   name: "Login",
@@ -43,7 +44,7 @@ export default {
         this.error = null;
         this.isLoading = true;
 
-        const res = await axios.post("http://localhost:8080/api/users/login", this.formData);
+        const res = await axios.post(API_ENDPOINTS.users.login, this.formData);
         console.log("Login response:", res.data);
 
         const { token, role, approved, message } = res.data;

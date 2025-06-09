@@ -191,30 +191,6 @@
               </div>
             </div>
 
-            <!-- Recent Transactions -->
-            <div class="option-section">
-              <h5>📋 Recent Transactions</h5>
-              <div class="recent-transactions">
-                <div v-if="recentTransactions.length === 0" class="no-transactions">
-                  No recent transactions
-                </div>
-                <div 
-                  v-else
-                  v-for="transaction in recentTransactions.slice(0, 3)" 
-                  :key="transaction.id"
-                  class="transaction-item"
-                >
-                  <div class="transaction-info">
-                    <span class="transaction-type">{{ transaction.description }}</span>
-                    <span class="transaction-amount">€{{ transaction.amount.toFixed(2) }}</span>
-                  </div>
-                  <div class="transaction-date">{{ formatDate(transaction.date) }}</div>
-                </div>
-                <button @click="viewAllTransactions" class="view-all-btn">
-                  View All Transactions
-                </button>
-              </div>
-            </div>
           </div>
 
           <!-- Action Buttons -->
@@ -279,6 +255,7 @@
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { setAuthToken } from "@/utils/auth"
+import { API_BASE_URL, API_ENDPOINTS } from "@/config"
 
 const email = ref('')
 const password = ref('')
@@ -289,7 +266,6 @@ const selectedAccount = ref(null)
 const customAmount = ref(0)
 const transferToIban = ref('')
 const transactionType = ref('withdraw')
-const recentTransactions = ref([])
 const searchResults = ref([])
 const showAccountSearch = ref(false)
 const searchQuery = ref('')
@@ -300,7 +276,6 @@ const loginLoading = ref(false)
 const transactionLoading = ref(false)
 const atmStatus = ref('Online')
 
-const API = 'http://localhost:8080'
 const quickAmounts = [10, 20, 50, 100, 200, 500]
 
 // Computed properties
@@ -363,7 +338,7 @@ const login = async () => {
   error.value = null
   
   try {
-    const res = await axios.post(`${API}/api/users/login`, {
+    const res = await axios.post(API_ENDPOINTS.users.login, {
       email: email.value,
       password: password.value
     })
@@ -398,7 +373,7 @@ const logout = () => {
 
 const checkATMStatus = async () => {
   try {
-    const res = await axios.get(`${API}/api/transactions/atm/status`, {
+    const res = await axios.get(API_ENDPOINTS.transactions.atmStatus, {
       headers: { Authorization: `Bearer ${atmToken.value}` }
     })
     atmStatus.value = res.data.operational ? 'Online' : 'Service Unavailable'
@@ -409,12 +384,11 @@ const checkATMStatus = async () => {
 
 const fetchUser = async () => {
   try {
-    const res = await axios.get(`${API}/api/users/me`, {
+    const res = await axios.get(API_ENDPOINTS.users.me, {
       headers: { Authorization: `Bearer ${atmToken.value}` }
     })
     user.value = res.data
     await fetchUserAccounts()
-    await fetchRecentTransactions()
   } catch (err) {
     error.value = '❌ Failed to load user information'
     console.error(err)
@@ -423,24 +397,13 @@ const fetchUser = async () => {
 
 const fetchUserAccounts = async () => {
   try {
-    const res = await axios.get(`${API}/api/accounts/user/${user.value.id}`, {
+    const res = await axios.get(API_ENDPOINTS.accounts.user(user.value.id), {
       headers: { Authorization: `Bearer ${atmToken.value}` }
     })
     userAccounts.value = res.data
   } catch (err) {
     console.error('❌ Failed to fetch accounts', err)
     showMessage('Failed to load account information', 'error')
-  }
-}
-
-const fetchRecentTransactions = async () => {
-  try {
-    const res = await axios.get(`${API}/api/transactions/atm/recent-transactions?limit=5`, {
-      headers: { Authorization: `Bearer ${atmToken.value}` }
-    })
-    recentTransactions.value = res.data.transactions || []
-  } catch (err) {
-    console.error('Failed to fetch transactions', err)
   }
 }
 
@@ -474,7 +437,7 @@ const quickWithdraw = async (amount) => {
 
   transactionLoading.value = true
   try {
-    const res = await axios.post(`${API}/api/transactions/withdraw`, {
+    const res = await axios.post(API_ENDPOINTS.transactions.withdraw, {
       iban: selectedAccount.value.iban,
       amount: amount
     }, {
@@ -516,21 +479,21 @@ const performCustomTransaction = async () => {
 
     switch (transactionType.value) {
       case 'withdraw':
-        endpoint = '/api/transactions/withdraw'
+        endpoint = API_ENDPOINTS.transactions.withdraw
         payload = {
           iban: selectedAccount.value.iban,
           amount: customAmount.value
         }
         break
       case 'deposit':
-        endpoint = '/api/transactions/deposit'
+        endpoint = API_ENDPOINTS.transactions.deposit
         payload = {
           iban: selectedAccount.value.iban,
           amount: customAmount.value
         }
         break
       case 'transfer':
-        endpoint = '/api/transactions/transfer'
+        endpoint = API_ENDPOINTS.transactions.transfer
         payload = {
           fromIban: selectedAccount.value.iban,
           toIban: transferToIban.value,
@@ -539,7 +502,7 @@ const performCustomTransaction = async () => {
         break
     }
 
-    const res = await axios.post(`${API}${endpoint}`, payload, {
+    const res = await axios.post(endpoint, payload, {
       headers: { Authorization: `Bearer ${atmToken.value}` }
     })
 
@@ -562,7 +525,6 @@ const performCustomTransaction = async () => {
 
 const refreshAccountData = async () => {
   await fetchUserAccounts()
-  await fetchRecentTransactions()
   
   // Update selected account
   if (selectedAccount.value) {
@@ -579,11 +541,11 @@ const searchAccounts = async () => {
   try {
     let response
     try {
-      response = await axios.get(`${API}/api/accounts/find-by-name?name=${searchQuery.value}`, {
+      response = await axios.get(`${API_ENDPOINTS.accounts.findByName}?name=${searchQuery.value}`, {
         headers: { Authorization: `Bearer ${atmToken.value}` }
       })
     } catch (nameError) {
-      response = await axios.get(`${API}/api/accounts/search-iban?iban=${searchQuery.value}`, {
+      response = await axios.get(`${API_ENDPOINTS.accounts.searchIban}?iban=${searchQuery.value}`, {
         headers: { Authorization: `Bearer ${atmToken.value}` }
       })
     }
@@ -934,11 +896,6 @@ onMounted(() => {
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.85rem;
-}
-
-.recent-transactions {
-  max-height: 200px;
-  overflow-y: auto;
 }
 
 .transaction-item {

@@ -528,8 +528,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import axios from 'axios'
 import { getAuthToken } from '@/utils/auth'
-
-const API_BASE_URL = 'http://localhost:8080'
+import { API_ENDPOINTS } from '@/config'
 
 // Reactive data
 const stats = ref({
@@ -616,7 +615,7 @@ const showMessage = (msg, type = 'success') => {
 
 const fetchDashboardStats = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/admin/dashboard-stats`, {
+    const response = await axios.get(API_ENDPOINTS.admin.dashboardStats, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     })
     stats.value = response.data
@@ -628,7 +627,7 @@ const fetchDashboardStats = async () => {
 const fetchPendingUsers = async () => {
   loadingApprovals.value = true
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/admin/unapproved-users`, {
+    const response = await axios.get(API_ENDPOINTS.admin.unapprovedUsers, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     })
     pendingUsers.value = response.data
@@ -642,7 +641,7 @@ const fetchPendingUsers = async () => {
 
 const fetchAllAccounts = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/admin/accounts`, {
+    const response = await axios.get(API_ENDPOINTS.admin.accounts, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     })
     allAccounts.value = response.data
@@ -654,7 +653,7 @@ const fetchAllAccounts = async () => {
 
 const fetchApprovedUsers = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/admin/unapproved-users`, {
+    const response = await axios.get(API_ENDPOINTS.admin.unapprovedUsers, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     })
     // This endpoint returns unapproved users, so we need to fetch all users
@@ -673,7 +672,7 @@ const fetchApprovedUsers = async () => {
 
 const fetchAccountLimits = async (iban) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/accounts/limits/${iban}`, {
+    const response = await axios.get(API_ENDPOINTS.accounts.limits(iban), {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     })
     selectedAccountLimits.value = response.data
@@ -707,7 +706,7 @@ const filterAccounts = () => {
 
 const approveUser = async (userId) => {
   try {
-    await axios.post(`${API_BASE_URL}/api/admin/approve/${userId}`, {}, {
+    await axios.post(API_ENDPOINTS.admin.approve(userId), {}, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     })
     showMessage('User approved and accounts created successfully', 'success')
@@ -722,7 +721,7 @@ const approveUser = async (userId) => {
 const viewAccountDetails = async (account) => {
   selectedAccount.value = account
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/admin/accounts/${account.id}/transactions`, {
+    const response = await axios.get(API_ENDPOINTS.admin.accountTransactions(account.id), {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     })
     accountTransactions.value = response.data
@@ -736,7 +735,7 @@ const closeAccount = async (account) => {
   if (!confirm(`Are you sure you want to close account ${account.iban}?`)) return
   
   try {
-    await axios.post(`${API_BASE_URL}/api/admin/accounts/${account.id}/close`, {}, {
+    await axios.post(API_ENDPOINTS.admin.closeAccount(account.id), {}, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     })
     showMessage('Account closed successfully', 'success')
@@ -758,7 +757,7 @@ const updateAccountLimits = async () => {
       params.append('dailyLimit', limitForm.value.dailyLimit)
     }
 
-    const response = await axios.post(`${API_BASE_URL}/api/accounts/update-limits?${params}`, {}, {
+    const response = await axios.post(`${API_ENDPOINTS.accounts.updateLimits}?${params}`, {}, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     })
 
@@ -780,7 +779,7 @@ const updateAccountLimits = async () => {
 const performAdminTransfer = async () => {
   transferLoading.value = true
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/transactions/admin`, {
+    const response = await axios.post(API_ENDPOINTS.transactions.admin, {
       fromIban: adminTransfer.value.fromIban,
       toIban: adminTransfer.value.toIban,
       amount: adminTransfer.value.amount
@@ -811,7 +810,7 @@ const performQuickDeposit = async () => {
 
   depositLoading.value = true
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/transactions/deposit`, {
+    const response = await axios.post(API_ENDPOINTS.transactions.deposit, {
       iban: quickDeposit.value.iban,
       amount: quickDeposit.value.amount
     }, {
@@ -840,7 +839,7 @@ const performQuickWithdraw = async () => {
 
   withdrawLoading.value = true
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/transactions/withdraw`, {
+    const response = await axios.post(API_ENDPOINTS.transactions.withdraw, {
       iban: quickWithdraw.value.iban,
       amount: quickWithdraw.value.amount
     }, {
@@ -874,7 +873,7 @@ const createAccount = async () => {
     params.append('absoluteLimit', newAccount.value.absoluteLimit)
     params.append('dailyLimit', newAccount.value.dailyLimit)
 
-    const response = await axios.post(`${API_BASE_URL}/api/accounts/create?${params}`, {}, {
+    const response = await axios.post(`${API_ENDPOINTS.accounts.create}?${params}`, {}, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     })
 
