@@ -93,8 +93,12 @@
           <!-- Transaction Options -->
           <div class="transaction-options">
             <div class="option-section">
-              <h5>💰 Quick Cash</h5>
-              <div class="quick-amounts">
+              <h5>💰 Quick Cash Withdrawal</h5>
+              <div v-if="selectedAccount.type === 'SAVINGS'" class="savings-notice">
+                <p>⚠️ ATM withdrawals are not available for savings accounts.</p>
+                <p>Please use the main banking app or visit a branch.</p>
+              </div>
+              <div v-else class="quick-amounts">
                 <button 
                   v-for="amount in quickAmounts" 
                   :key="amount"
@@ -113,6 +117,7 @@
               <div class="custom-transaction">
                 <div class="transaction-type-selector">
                   <button 
+                    v-if="selectedAccount.type === 'CHECKING'"
                     @click="transactionType = 'withdraw'"
                     :class="['type-btn', { 'active': transactionType === 'withdraw' }]"
                   >
@@ -131,6 +136,11 @@
                   >
                     Transfer
                   </button>
+                </div>
+
+                <div v-if="selectedAccount.type === 'SAVINGS' && transactionType === 'withdraw'" class="savings-notice">
+                  <p>⚠️ Withdrawals from savings accounts are not permitted via ATM.</p>
+                  <p>Available transactions: Deposits only</p>
                 </div>
 
                 <div class="transaction-form">
@@ -388,7 +398,7 @@ const logout = () => {
 
 const checkATMStatus = async () => {
   try {
-    const res = await axios.get(`${API}/api/atm/status`, {
+    const res = await axios.get(`${API}/api/transactions/atm/status`, {
       headers: { Authorization: `Bearer ${atmToken.value}` }
     })
     atmStatus.value = res.data.operational ? 'Online' : 'Service Unavailable'
@@ -425,7 +435,7 @@ const fetchUserAccounts = async () => {
 
 const fetchRecentTransactions = async () => {
   try {
-    const res = await axios.get(`${API}/api/atm/recent-transactions?limit=5`, {
+    const res = await axios.get(`${API}/api/transactions/atm/recent-transactions?limit=5`, {
       headers: { Authorization: `Bearer ${atmToken.value}` }
     })
     recentTransactions.value = res.data.transactions || []
@@ -438,14 +448,25 @@ const selectAccount = (account) => {
   selectedAccount.value = account
   customAmount.value = 0
   transferToIban.value = ''
-  transactionType.value = 'withdraw'
+  // Set default transaction type based on account type
+  transactionType.value = account.type === 'SAVINGS' ? 'deposit' : 'withdraw'
 }
 
 const canWithdraw = (amount) => {
+  // Savings accounts cannot withdraw via ATM
+  if (selectedAccount.value?.type === 'SAVINGS') {
+    return false
+  }
   return amount <= availableWithdraw.value && amount % 10 === 0
 }
 
 const quickWithdraw = async (amount) => {
+  // Additional check for savings accounts
+  if (selectedAccount.value?.type === 'SAVINGS') {
+    showMessage('⚠️ ATM withdrawals are not available for savings accounts. Please use the main banking app or visit a branch.', 'error')
+    return
+  }
+
   if (!canWithdraw(amount)) {
     showMessage('Insufficient funds, exceeds limits, or invalid denomination', 'error')
     return
@@ -453,7 +474,7 @@ const quickWithdraw = async (amount) => {
 
   transactionLoading.value = true
   try {
-    const res = await axios.post(`${API}/api/atm/withdraw`, {
+    const res = await axios.post(`${API}/api/transactions/atm/withdraw`, {
       iban: selectedAccount.value.iban,
       amount: amount
     }, {
@@ -476,7 +497,16 @@ const quickWithdraw = async (amount) => {
 }
 
 const performCustomTransaction = async () => {
-  if (!isValidTransaction.value) return
+  // Additional validation for savings account withdrawals
+  if (transactionType.value === 'withdraw' && selectedAccount.value?.type === 'SAVINGS') {
+    showMessage('⚠️ ATM withdrawals are not available for savings accounts. Please use deposits instead.', 'error')
+    return
+  }
+
+  if (!isValidTransaction.value) {
+    showMessage('Please enter a valid amount', 'error')
+    return
+  }
 
   transactionLoading.value = true
   
@@ -486,21 +516,21 @@ const performCustomTransaction = async () => {
 
     switch (transactionType.value) {
       case 'withdraw':
-        endpoint = '/api/atm/withdraw'
+        endpoint = '/api/transactions/atm/withdraw'
         payload = {
           iban: selectedAccount.value.iban,
           amount: customAmount.value
         }
         break
       case 'deposit':
-        endpoint = '/api/atm/deposit'
+        endpoint = '/api/transactions/atm/deposit'
         payload = {
           iban: selectedAccount.value.iban,
           amount: customAmount.value
         }
         break
       case 'transfer':
-        endpoint = '/api/atm/transfer'
+        endpoint = '/api/transactions/atm/transfer'
         payload = {
           fromIban: selectedAccount.value.iban,
           toIban: transferToIban.value,
@@ -1100,6 +1130,20 @@ onMounted(() => {
   opacity: 0.7;
   font-size: 0.85rem;
   margin-top: 3px;
+}
+
+.savings-notice {
+  background: rgba(255, 193, 7, 0.2);
+  border: 1px solid rgba(255, 193, 7, 0.5);
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+  color: #FFD54F;
+}
+
+.savings-notice p {
+  margin: 5px 0;
+  font-size: 0.9rem;
 }
 
 /* Responsive Design */
