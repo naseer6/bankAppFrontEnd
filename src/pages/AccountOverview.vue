@@ -1,12 +1,12 @@
 <template>
-  <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1>
-        <i class="bi bi-wallet2"></i> My Accounts
+  <div class="container-fluid py-4 px-3 px-lg-4">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3">
+      <h1 class="mb-0">
+        <i class="bi bi-wallet2 text-primary"></i> My Accounts
       </h1>
-      <div class="text-end">
-        <h5 class="text-muted mb-0">Total Balance</h5>
-        <h2 class="text-primary fw-bold">€{{ totalBalance.toFixed(2) }}</h2>
+      <div class="text-center text-lg-end">
+        <h6 class="text-muted mb-1">Total Balance</h6>
+        <h2 class="text-primary fw-bold mb-0">€{{ totalBalance.toFixed(2) }}</h2>
       </div>
     </div>
 
@@ -27,31 +27,31 @@
       </div>
 
       <!-- Account Cards -->
-      <div class="row g-4 mb-4">
-        <div v-for="account in accounts" :key="account.id" class="col-lg-6">
+      <div class="row g-3 g-lg-4 mb-5">
+        <div v-for="account in accounts" :key="account.id" class="col-12 col-lg-6">
           <div class="account-card" :class="{ 'checking': account.type === 'CHECKING', 'savings': account.type === 'SAVINGS' }">
-            <div class="card-body">
+            <div class="card-body p-4">
               <div class="d-flex justify-content-between align-items-start mb-3">
-                <div>
-                  <h4 class="card-title">
+                <div class="flex-grow-1">
+                  <h4 class="card-title h5 mb-2">
                     {{ account.type === 'CHECKING' ? '🏦 Checking Account' : '💰 Savings Account' }}
                   </h4>
-                  <p class="text-muted mb-1">{{ account.iban }}</p>
+                  <p class="text-muted mb-0 small">{{ account.iban }}</p>
                 </div>
-                <span :class="['badge', account.type === 'CHECKING' ? 'bg-primary' : 'bg-warning']">
+                <span :class="['badge', 'fs-6', account.type === 'CHECKING' ? 'bg-primary' : 'bg-warning']">
                   {{ account.type }}
                 </span>
               </div>
 
-              <div class="balance-section mb-4">
-                <h3 class="balance">€{{ account.balance.toFixed(2) }}</h3>
+              <div class="balance-section mb-4 text-center text-lg-start">
+                <h3 class="balance mb-1">€{{ account.balance.toFixed(2) }}</h3>
                 <small class="text-muted">Available Balance</small>
               </div>
 
               <!-- Account Limits -->
-              <div class="limits-section">
-                <h6 class="text-muted mb-2">Account Limits</h6>
-                <div class="row g-2">
+              <div class="limits-section mb-4">
+                <h6 class="text-muted mb-3">Account Limits</h6>
+                <div class="row g-2 g-lg-3">
                   <div class="col-6">
                     <div class="limit-box">
                       <div class="limit-label">Minimum Balance</div>
@@ -69,11 +69,11 @@
                 </div>
 
                 <div v-if="account.type === 'CHECKING'" class="mt-3">
-                  <div class="d-flex justify-content-between mb-1">
-                    <small>Daily Transfer Limit</small>
-                    <small>€{{ account.remainingDailyLimit.toFixed(2) }} / €{{ account.dailyLimit.toFixed(2) }}</small>
+                  <div class="d-flex justify-content-between mb-2">
+                    <small class="text-muted">Daily Transfer Limit</small>
+                    <small class="fw-semibold">€{{ account.remainingDailyLimit.toFixed(2) }} / €{{ account.dailyLimit.toFixed(2) }}</small>
                   </div>
-                  <div class="progress" style="height: 8px;">
+                  <div class="progress" style="height: 10px;">
                     <div 
                       class="progress-bar"
                       :class="getDailyLimitClass(account)"
@@ -84,23 +84,23 @@
               </div>
 
               <!-- Quick Actions -->
-              <div class="mt-4 d-flex gap-2">
+              <div class="d-flex flex-wrap gap-2">
                 <router-link 
                   :to="{ path: '/transfers', query: { account: account.iban } }"
-                  class="btn btn-primary btn-sm"
+                  class="btn btn-primary btn-sm flex-fill flex-lg-grow-0"
                   v-if="account.type === 'CHECKING'"
                 >
                   <i class="bi bi-send"></i> Transfer
                 </router-link>
                 <router-link 
                   :to="{ path: '/transactions', query: { iban: account.iban } }"
-                  class="btn btn-outline-primary btn-sm"
+                  class="btn btn-outline-primary btn-sm flex-fill flex-lg-grow-0"
                 >
                   <i class="bi bi-clock-history"></i> History
                 </router-link>
                 <button 
                   @click="showAccountDetails(account)"
-                  class="btn btn-outline-secondary btn-sm"
+                  class="btn btn-outline-secondary btn-sm flex-fill flex-lg-grow-0"
                 >
                   <i class="bi bi-info-circle"></i> Details
                 </button>
@@ -110,36 +110,39 @@
         </div>
       </div>
 
-      <!-- Recent Activity -->
+      <!-- Recent Activity 
       <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">Recent Activity</h5>
+        <div class="card-header bg-white border-bottom d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+          <h5 class="mb-0">
+            <i class="bi bi-clock-history text-primary me-2"></i>Recent Activity
+          </h5>
           <router-link to="/transactions" class="btn btn-sm btn-outline-primary">
-            View All
+            <i class="bi bi-arrow-right"></i> View All
           </router-link>
         </div>
         <div class="card-body p-0">
-          <div v-if="recentTransactions.length === 0" class="text-center py-4 text-muted">
-            No recent transactions
+          <div v-if="recentTransactions.length === 0" class="text-center py-5 text-muted">
+            <i class="bi bi-inbox display-4 mb-3 d-block text-muted opacity-50"></i>
+            <p class="mb-0">No recent transactions</p>
           </div>
           <div v-else class="list-group list-group-flush">
             <div 
               v-for="transaction in recentTransactions.slice(0, 5)" 
               :key="transaction.id"
-              class="list-group-item"
+              class="list-group-item list-group-item-action"
             >
               <div class="d-flex justify-content-between align-items-center">
-                <div>
+                <div class="flex-grow-1">
                   <h6 class="mb-1">{{ transaction.description || transaction.transactionType }}</h6>
                   <small class="text-muted">
                     {{ formatDate(transaction.date || transaction.timestamp) }}
-                    <span v-if="transaction.fromIban"> • From: {{ transaction.fromIban }}</span>
-                    <span v-if="transaction.toIban"> • To: {{ transaction.toIban }}</span>
+                    <span v-if="transaction.fromIban" class="d-block d-sm-inline"> • From: {{ transaction.fromIban }}</span>
+                    <span v-if="transaction.toIban" class="d-block d-sm-inline"> • To: {{ transaction.toIban }}</span>
                   </small>
                 </div>
-                <div class="text-end">
+                <div class="text-end ms-3">
                   <span 
-                    class="fw-bold"
+                    class="fw-bold fs-6"
                     :class="getTransactionClass(transaction)"
                   >
                     {{ getTransactionSign(transaction) }}€{{ transaction.amount.toFixed(2) }}
@@ -149,55 +152,61 @@
             </div>
           </div>
         </div>
-      </div>
+      </div> -->
     </div>
 
     <!-- Account Details Modal -->
     <div class="modal fade" id="accountDetailsModal" tabindex="-1">
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" v-if="selectedAccount">
-          <div class="modal-header">
-            <h5 class="modal-title">Account Details</h5>
+          <div class="modal-header bg-light">
+            <h5 class="modal-title">
+              <i class="bi bi-info-circle text-primary me-2"></i>Account Details
+            </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <table class="table table-borderless">
+            <table class="table table-borderless mb-0">
               <tbody>
                 <tr>
-                  <td class="text-muted">Account Type:</td>
+                  <td class="text-muted fw-medium">Account Type:</td>
                   <td class="fw-bold">{{ selectedAccount.type }}</td>
                 </tr>
                 <tr>
-                  <td class="text-muted">IBAN:</td>
-                  <td class="fw-bold">{{ selectedAccount.iban }}</td>
+                  <td class="text-muted fw-medium">IBAN:</td>
+                  <td class="fw-bold font-monospace">{{ selectedAccount.iban }}</td>
                 </tr>
                 <tr>
-                  <td class="text-muted">Current Balance:</td>
+                  <td class="text-muted fw-medium">Current Balance:</td>
                   <td class="fw-bold text-primary">€{{ selectedAccount.balance.toFixed(2) }}</td>
                 </tr>
                 <tr>
-                  <td class="text-muted">Absolute Limit:</td>
+                  <td class="text-muted fw-medium">Absolute Limit:</td>
                   <td class="fw-bold">€{{ selectedAccount.absoluteLimit.toFixed(2) }}</td>
                 </tr>
                 <tr>
-                  <td class="text-muted">Daily Transfer Limit:</td>
+                  <td class="text-muted fw-medium">Daily Transfer Limit:</td>
                   <td class="fw-bold">€{{ selectedAccount.dailyLimit.toFixed(2) }}</td>
                 </tr>
                 <tr>
-                  <td class="text-muted">Used Today:</td>
+                  <td class="text-muted fw-medium">Used Today:</td>
                   <td class="fw-bold">€{{ selectedAccount.dailySpent.toFixed(2) }}</td>
                 </tr>
                 <tr>
-                  <td class="text-muted">Status:</td>
+                  <td class="text-muted fw-medium">Status:</td>
                   <td>
-                    <span class="badge bg-success">Active</span>
+                    <span class="badge bg-success">
+                      <i class="bi bi-check-circle me-1"></i>Active
+                    </span>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="bi bi-x-lg me-1"></i>Close
+            </button>
           </div>
         </div>
       </div>
@@ -308,13 +317,19 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.container-fluid {
+  max-width: 1400px;
+}
+
 .account-card {
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   overflow: hidden;
   position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  height: 100%;
 }
 
 .account-card::before {
@@ -324,59 +339,80 @@ onMounted(() => {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #0d6efd 0%, #0a58ca 100%);
+  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
 }
 
 .account-card.savings::before {
-  background: linear-gradient(90deg, #ffc107 0%, #ffb300 100%);
+  background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
 }
 
 .account-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-8px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
 .balance {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 700;
   color: #0d6efd;
   margin: 0;
+  line-height: 1.2;
 }
 
 .limit-box {
-  background: #f8f9fa;
-  padding: 0.75rem;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 1rem;
+  border-radius: 12px;
   text-align: center;
+  transition: transform 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.limit-box:hover {
+  transform: translateY(-2px);
 }
 
 .limit-label {
   font-size: 0.75rem;
   color: #6c757d;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
 }
 
 .limit-value {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #212529;
 }
 
 .progress {
   background-color: #e9ecef;
-  border-radius: 4px;
+  border-radius: 6px;
   overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.progress-bar {
+  transition: width 0.6s ease;
 }
 
 .card {
   border: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .list-group-item {
   border: none;
-  border-bottom: 1px solid #f0f0f0;
-  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 1.25rem 1.5rem;
+  transition: all 0.2s ease;
 }
 
 .list-group-item:last-child {
@@ -385,25 +421,99 @@ onMounted(() => {
 
 .list-group-item:hover {
   background-color: #f8f9fa;
+  transform: translateX(4px);
 }
 
 .btn-sm {
-  padding: 0.375rem 0.75rem;
+  padding: 0.5rem 1rem;
   font-size: 0.875rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-sm:hover {
+  transform: translateY(-1px);
 }
 
 .modal-content {
   border: none;
-  border-radius: 12px;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header, .modal-footer {
+  border-radius: 16px 16px 0 0;
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  border-radius: 0 0 16px 16px;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.table td {
+  padding: 0.75rem 0;
+  border: none;
+  vertical-align: middle;
 }
 
 .table td:first-child {
-  width: 40%;
+  width: 45%;
 }
 
-@media (max-width: 992px) {
-  .account-card {
-    margin-bottom: 1rem;
+.font-monospace {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  font-size: 0.9em;
+}
+
+.alert {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.badge {
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .balance {
+    font-size: 2rem;
+  }
+  
+  .limit-box {
+    padding: 0.75rem;
+  }
+  
+  .card-body {
+    padding: 1.5rem !important;
+  }
+  
+  .list-group-item {
+    padding: 1rem;
+  }
+  
+  .modal-dialog {
+    margin: 1rem;
+  }
+  
+  .container-fluid {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .d-flex.gap-2 .btn {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
   }
 }
 </style>
