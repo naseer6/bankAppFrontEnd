@@ -514,7 +514,7 @@ const performTransfer = async () => {
 const performAdminTransfer = async () => {
   adminTransferLoading.value = true
   try {
-    const response = await api.post('/transactions/admin', {
+    const response = await api.post('/transactions/admin/transfer', {
       fromIban: adminTransferForm.value.fromIban,
       toIban: adminTransferForm.value.toIban,
       amount: adminTransferForm.value.amount

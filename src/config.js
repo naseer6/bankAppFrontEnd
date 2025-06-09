@@ -26,7 +26,7 @@ export const API_ENDPOINTS = {
     withdraw: `${API_BASE_URL}/transactions/withdraw`,
     deposit: `${API_BASE_URL}/transactions/deposit`,
     transfer: `${API_BASE_URL}/transactions/transfer`,
-    admin: `${API_BASE_URL}/transactions/admin`,
+    admin: `${API_BASE_URL}/transactions/admin/transfer`,
     atmStatus: `${API_BASE_URL}/transactions/atm/status`,
     atmRecent: `${API_BASE_URL}/transactions/atm/recent-transactions`,
   }

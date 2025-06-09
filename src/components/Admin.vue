@@ -791,7 +791,7 @@ const performAdminTransfer = async () => {
       showMessage(response.data.message, 'success')
       adminTransfer.value = { fromIban: '', toIban: '', amount: '' }
       await fetchAllAccounts()
-      await fetchTransactions()
+      await fetchDashboardStats()
     } else {
       showMessage(response.data.message, 'error')
     }
