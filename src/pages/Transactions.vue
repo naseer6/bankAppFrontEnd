@@ -85,11 +85,10 @@
                 <th>Initiated By</th>
               </tr>
             </thead>
-            <tbody>
-              <tr v-for="tx in transactions" :key="tx.id">
+            <tbody>              <tr v-for="tx in transactions" :key="tx.id">
                 <td v-if="isAdmin">{{ tx.id }}</td>
-                <td>{{ tx.fromIban || 'N/A' }}</td>
-                <td>{{ tx.toIban || 'N/A' }}</td>
+                <td>{{ tx.fromIban || 'ATM' }}</td>
+                <td>{{ tx.toIban || 'ATM' }}</td>
                 <td class="fw-bold" :class="getAmountClass(tx)">
                   €{{ (tx.signedAmount !== undefined ? tx.signedAmount : tx.amount).toFixed(2) }}
                 </td>
