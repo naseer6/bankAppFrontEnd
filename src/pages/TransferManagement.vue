@@ -489,7 +489,7 @@ const fetchAccountLimits = async (iban) => {
 const performTransfer = async () => {
   transferLoading.value = true
   try {
-    const response = await api.post('/transactions/customer', {
+    const response = await api.post('/transactions/transfer', {
       fromIban: transferForm.value.fromIban,
       toIban: transferForm.value.toIban,
       amount: transferForm.value.amount
@@ -700,7 +700,7 @@ const performInternalTransfer = async () => {
     }).catch(async (error) => {
       // Fallback to regular customer endpoint if internal endpoint doesn't exist
       if (error.response?.status === 404) {
-        return await api.post('/transactions/customer', {
+        return await api.post('/transactions/transfer', {
           fromIban: internalTransferForm.value.fromIban,
           toIban: internalTransferForm.value.toIban,
           amount: internalTransferForm.value.amount
