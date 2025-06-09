@@ -443,13 +443,13 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="tx in accountTransactions.slice(0, 5)" :key="tx.id">
+                  <tr v-for="tx in transactionsWithBalance" :key="tx.id">
                     <td>{{ formatDateTime(tx.timestamp) }}</td>
                     <td>{{ tx.transactionType }}</td>
                     <td :class="tx.fromAccount?.id === selectedAccount.id ? 'text-danger' : 'text-success'">
                       {{ tx.fromAccount?.id === selectedAccount.id ? '-' : '+' }}€{{ tx.amount?.toFixed(2) }}
                     </td>
-                    <td>-</td>
+                    <td class="fw-bold">€{{ tx.balanceAfter?.toFixed(2) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -602,6 +602,31 @@ watch(() => limitForm.value.iban, async (newIban) => {
   } else {
     selectedAccountLimits.value = null
   }
+})
+
+// Computed properties
+const transactionsWithBalance = computed(() => {
+  if (!selectedAccount.value || !accountTransactions.value.length) return []
+  
+  let currentBalance = selectedAccount.value.balance
+  const transactions = [...accountTransactions.value].slice(0, 5).reverse()
+  
+  return transactions.map(tx => {
+    const isOutgoing = tx.fromAccount?.id === selectedAccount.value.id
+    const balanceAfter = currentBalance
+    
+    // Calculate what the balance was before this transaction
+    if (isOutgoing) {
+      currentBalance += tx.amount
+    } else {
+      currentBalance -= tx.amount
+    }
+    
+    return {
+      ...tx,
+      balanceAfter: balanceAfter
+    }
+  }).reverse()
 })
 
 // Methods
