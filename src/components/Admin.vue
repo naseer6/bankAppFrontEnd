@@ -110,18 +110,31 @@
       <div class="tab-pane fade" id="accounts">
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title mb-4">All Customer Accounts</h5>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h5 class="card-title mb-0">All Customer Accounts</h5>
+              <div class="d-flex gap-2 align-items-center">
+                <span class="badge bg-info">{{ totalAccounts }} total accounts</span>
+                <button class="btn btn-primary" @click="showCreateAccountModal">
+                  <i class="bi bi-plus-circle"></i> Create Account
+                </button>
+              </div>
+            </div>
             
             <!-- Search and Filters -->
             <div class="row mb-3">
-              <div class="col-md-4">
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  placeholder="Search by IBAN or owner name"
-                  v-model="accountFilters.search"
-                  @input="filterAccounts"
-                >
+              <div class="col-md-3">
+                <div class="input-group">
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    placeholder="Search by IBAN or owner name"
+                    v-model="accountFilters.search"
+                    @input="filterAccounts"
+                  >
+                  <button class="btn btn-outline-secondary" @click="clearAccountSearch">
+                    <i class="bi bi-x-circle"></i>
+                  </button>
+                </div>
               </div>
               <div class="col-md-2">
                 <select class="form-select" v-model="accountFilters.type" @change="filterAccounts">
@@ -137,38 +150,67 @@
                   <option value="inactive">Inactive</option>
                 </select>
               </div>
-              <div class="col-md-4 text-end">
-                <button class="btn btn-primary" @click="showCreateAccountModal">
-                  <i class="bi bi-plus-circle"></i> Create Account
+              <div class="col-md-2">
+                <select class="form-select" v-model="accountPageSize" @change="changeAccountPageSize">
+                  <option value="5">5 per page</option>
+                  <option value="10">10 per page</option>
+                  <option value="20">20 per page</option>
+                  <option value="50">50 per page</option>
+                </select>
+              </div>
+              <div class="col-md-3 text-end">
+                <button class="btn btn-outline-secondary" @click="clearAccountFilters">
+                  <i class="bi bi-arrow-clockwise"></i> Reset Filters
                 </button>
               </div>
             </div>
 
+            <!-- Loading State -->
+            <div v-if="loadingAccounts" class="text-center py-4">
+              <div class="spinner-border text-primary"></div>
+              <p class="mt-2">Loading accounts...</p>
+            </div>
+
             <!-- Accounts Table -->
-            <div class="table-responsive">
-              <table class="table table-striped">
-                <thead>
+            <div v-else class="table-responsive">
+              <table class="table table-striped table-hover">
+                <thead class="table-light">
                   <tr>
-                    <th>IBAN</th>
-                    <th>Type</th>
-                    <th>Owner</th>
-                    <th>Balance</th>
-                    <th>Absolute Limit</th>
-                    <th>Daily Limit</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th scope="col">
+                      <button class="btn btn-link p-0 text-decoration-none" @click="sortAccounts('iban')">
+                        IBAN 
+                        <i class="bi" :class="getSortIcon('iban')"></i>
+                      </button>
+                    </th>
+                    <th scope="col">Type</th>
+                    <th scope="col">
+                      <button class="btn btn-link p-0 text-decoration-none" @click="sortAccounts('owner.name')">
+                        Owner 
+                        <i class="bi" :class="getSortIcon('owner.name')"></i>
+                      </button>
+                    </th>
+                    <th scope="col">
+                      <button class="btn btn-link p-0 text-decoration-none" @click="sortAccounts('balance')">
+                        Balance 
+                        <i class="bi" :class="getSortIcon('balance')"></i>
+                      </button>
+                    </th>
+                    <th scope="col">Absolute Limit</th>
+                    <th scope="col">Daily Limit</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="account in filteredAccounts" :key="account.id">
-                    <td>{{ account.iban }}</td>
+                  <tr v-for="account in paginatedAccounts" :key="account.id">
+                    <td class="font-monospace">{{ account.iban }}</td>
                     <td>
                       <span :class="['badge', account.type === 'CHECKING' ? 'bg-primary' : 'bg-warning']">
                         {{ account.type }}
                       </span>
                     </td>
-                    <td>{{ account.owner?.name }}</td>
-                    <td class="fw-bold">€{{ account.balance?.toFixed(2) }}</td>
+                    <td class="fw-semibold">{{ account.owner?.name || 'Unknown' }}</td>
+                    <td class="fw-bold text-success">€{{ account.balance?.toFixed(2) }}</td>
                     <td>€{{ account.absoluteLimit?.toFixed(2) }}</td>
                     <td>€{{ account.dailyLimit?.toFixed(2) }}</td>
                     <td>
@@ -205,6 +247,43 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+
+            <!-- Account Pagination -->
+            <div v-if="filteredAccounts.length > 0" class="d-flex justify-content-between align-items-center mt-4">
+              <div class="text-muted">
+                Showing {{ accountStartIndex + 1 }} to {{ accountEndIndex }} of {{ filteredAccounts.length }} accounts
+              </div>
+              <nav aria-label="Account pagination">
+                <ul class="pagination pagination-sm mb-0">
+                  <li class="page-item" :class="{ disabled: accountCurrentPage === 0 }">
+                    <button class="page-link" @click="changeAccountPage(accountCurrentPage - 1)" :disabled="accountCurrentPage === 0">
+                      <i class="bi bi-chevron-left"></i> Previous
+                    </button>
+                  </li>
+                  
+                  <li v-for="page in accountVisiblePages" :key="page" class="page-item" :class="{ active: page - 1 === accountCurrentPage }">
+                    <button class="page-link" @click="changeAccountPage(page - 1)">
+                      {{ page }}
+                    </button>
+                  </li>
+                  
+                  <li class="page-item" :class="{ disabled: accountCurrentPage >= accountTotalPages - 1 }">
+                    <button class="page-link" @click="changeAccountPage(accountCurrentPage + 1)" :disabled="accountCurrentPage >= accountTotalPages - 1">
+                      Next <i class="bi bi-chevron-right"></i>
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+
+            <!-- No Results Message -->
+            <div v-if="filteredAccounts.length === 0 && !loadingAccounts" class="text-center py-4">
+              <i class="bi bi-bank display-4 text-muted"></i>
+              <p class="text-muted mt-2">No accounts found matching your criteria.</p>
+              <button class="btn btn-outline-primary" @click="clearAccountFilters">
+                <i class="bi bi-arrow-clockwise"></i> Reset Filters
+              </button>
             </div>
           </div>
         </div>
@@ -604,6 +683,13 @@ const accountTransactions = ref([])
 const selectedAccount = ref(null)
 const selectedAccountLimits = ref(null)
 
+// Account pagination
+const accountCurrentPage = ref(0)
+const accountPageSize = ref(10)
+const accountSortField = ref('iban')
+const accountSortDirection = ref('asc')
+const loadingAccounts = ref(false)
+
 // Search functionality for accounts
 const fromAccountSearch = ref('')
 const toAccountSearch = ref('')
@@ -672,6 +758,48 @@ const accountFilters = ref({
 let accountDetailsModal = null
 let createAccountModal = null
 
+// Account pagination computed properties
+const totalAccounts = computed(() => allAccounts.value.length)
+
+const accountTotalPages = computed(() => {
+  return Math.ceil(filteredAccounts.value.length / accountPageSize.value)
+})
+
+const accountStartIndex = computed(() => {
+  return accountCurrentPage.value * accountPageSize.value
+})
+
+const accountEndIndex = computed(() => {
+  return Math.min(accountStartIndex.value + accountPageSize.value, filteredAccounts.value.length)
+})
+
+const paginatedAccounts = computed(() => {
+  const start = accountStartIndex.value
+  const end = accountEndIndex.value
+  return filteredAccounts.value.slice(start, end)
+})
+
+const accountVisiblePages = computed(() => {
+  const pages = []
+  const totalPages = accountTotalPages.value
+  const current = accountCurrentPage.value
+  
+  // Show up to 5 page numbers
+  let startPage = Math.max(0, current - 2)
+  let endPage = Math.min(totalPages - 1, startPage + 4)
+  
+  // Adjust start if we're near the end
+  if (endPage - startPage < 4) {
+    startPage = Math.max(0, endPage - 4)
+  }
+  
+  for (let i = startPage; i <= endPage; i++) {
+    pages.push(i + 1)
+  }
+  
+  return pages
+})
+
 // Watch for limit form changes
 watch(() => limitForm.value.iban, async (newIban) => {
   if (newIban) {
@@ -715,6 +843,110 @@ const showMessage = (msg, type = 'success') => {
   }, 5000)
 }
 
+// Account pagination methods
+const filterAccounts = () => {
+  let result = [...allAccounts.value]
+
+  // Apply search filter
+  if (accountFilters.value.search) {
+    const search = accountFilters.value.search.toLowerCase()
+    result = result.filter(account => 
+      account.iban?.toLowerCase().includes(search) ||
+      account.owner?.name?.toLowerCase().includes(search) ||
+      account.owner?.email?.toLowerCase().includes(search)
+    )
+  }
+
+  // Apply type filter
+  if (accountFilters.value.type) {
+    result = result.filter(account => account.type === accountFilters.value.type)
+  }
+
+  // Apply status filter
+  if (accountFilters.value.status) {
+    const isActive = accountFilters.value.status === 'active'
+    result = result.filter(account => account.active === isActive)
+  }
+
+  // Apply sorting
+  result.sort((a, b) => {
+    let aValue, bValue
+    
+    if (accountSortField.value === 'owner.name') {
+      aValue = a.owner?.name || ''
+      bValue = b.owner?.name || ''
+    } else if (accountSortField.value === 'balance') {
+      aValue = a.balance || 0
+      bValue = b.balance || 0
+      // For numeric sorting
+      if (accountSortDirection.value === 'asc') {
+        return aValue - bValue
+      } else {
+        return bValue - aValue
+      }
+    } else {
+      aValue = a[accountSortField.value] || ''
+      bValue = b[accountSortField.value] || ''
+    }
+    
+    if (accountSortDirection.value === 'asc') {
+      return aValue.toString().localeCompare(bValue.toString())
+    } else {
+      return bValue.toString().localeCompare(aValue.toString())
+    }
+  })
+
+  filteredAccounts.value = result
+  
+  // Reset to first page if current page is beyond the new total
+  if (accountCurrentPage.value >= accountTotalPages.value) {
+    accountCurrentPage.value = 0
+  }
+}
+
+const clearAccountSearch = () => {
+  accountFilters.value.search = ''
+  filterAccounts()
+}
+
+const clearAccountFilters = () => {
+  accountFilters.value = {
+    search: '',
+    type: '',
+    status: ''
+  }
+  accountCurrentPage.value = 0
+  filterAccounts()
+}
+
+const sortAccounts = (field) => {
+  if (accountSortField.value === field) {
+    accountSortDirection.value = accountSortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    accountSortField.value = field
+    accountSortDirection.value = 'asc'
+  }
+  filterAccounts()
+}
+
+const getSortIcon = (field) => {
+  if (accountSortField.value !== field) {
+    return 'bi-chevron-expand'
+  }
+  return accountSortDirection.value === 'asc' ? 'bi-chevron-up' : 'bi-chevron-down'
+}
+
+const changeAccountPage = (page) => {
+  if (page >= 0 && page < accountTotalPages.value) {
+    accountCurrentPage.value = page
+  }
+}
+
+const changeAccountPageSize = () => {
+  accountCurrentPage.value = 0
+  filterAccounts()
+}
+
 const fetchDashboardStats = async () => {
   try {
     const response = await axios.get(API_ENDPOINTS.admin.dashboardStats, {
@@ -742,6 +974,7 @@ const fetchPendingUsers = async () => {
 }
 
 const fetchAllAccounts = async () => {
+  loadingAccounts.value = true
   try {
     const response = await axios.get(API_ENDPOINTS.admin.accounts, {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
@@ -750,6 +983,8 @@ const fetchAllAccounts = async () => {
     filterAccounts()
   } catch (error) {
     showMessage('Failed to fetch accounts', 'error')
+  } finally {
+    loadingAccounts.value = false
   }
 }
 
@@ -783,29 +1018,6 @@ const fetchAccountLimits = async (iban) => {
   }
 }
 
-const filterAccounts = () => {
-  let result = allAccounts.value
-
-  if (accountFilters.value.search) {
-    const search = accountFilters.value.search.toLowerCase()
-    result = result.filter(account => 
-      account.iban?.toLowerCase().includes(search) ||
-      account.owner?.name?.toLowerCase().includes(search)
-    )
-  }
-
-  if (accountFilters.value.type) {
-    result = result.filter(account => account.type === accountFilters.value.type)
-  }
-
-  if (accountFilters.value.status) {
-    const isActive = accountFilters.value.status === 'active'
-    result = result.filter(account => account.active === isActive)
-  }
-
-  filteredAccounts.value = result
-}
-
 const filterFromAccounts = () => {
   if (!fromAccountSearch.value.trim()) {
     filteredFromAccounts.value = []
@@ -816,7 +1028,7 @@ const filterFromAccounts = () => {
   filteredFromAccounts.value = allAccounts.value.filter(account => 
     account.iban?.toLowerCase().includes(search) || 
     account.owner?.name?.toLowerCase().includes(search)
-  ).slice(0, 10) // Limit to first 10 results for better performance
+  ).slice(0, 10)
 }
 
 const filterToAccounts = () => {
@@ -829,7 +1041,7 @@ const filterToAccounts = () => {
   filteredToAccounts.value = allAccounts.value.filter(account => 
     account.iban?.toLowerCase().includes(search) || 
     account.owner?.name?.toLowerCase().includes(search)
-  ).slice(0, 10) // Limit to first 10 results for better performance
+  ).slice(0, 10)
 }
 
 const selectFromAccount = (account) => {
@@ -854,7 +1066,7 @@ const filterDepositAccounts = () => {
   filteredDepositAccounts.value = allAccounts.value.filter(account => 
     account.iban?.toLowerCase().includes(search) || 
     account.owner?.name?.toLowerCase().includes(search)
-  ).slice(0, 10) // Limit to first 10 results for better performance
+  ).slice(0, 10)
 }
 
 const filterWithdrawAccounts = () => {
@@ -867,7 +1079,7 @@ const filterWithdrawAccounts = () => {
   filteredWithdrawAccounts.value = allAccounts.value.filter(account => 
     account.iban?.toLowerCase().includes(search) || 
     account.owner?.name?.toLowerCase().includes(search)
-  ).slice(0, 10) // Limit to first 10 results for better performance
+  ).slice(0, 10)
 }
 
 const selectDepositAccount = (account) => {
@@ -917,6 +1129,11 @@ const viewAccountDetails = async (account) => {
     accountTransactions.value = []
   }
   accountDetailsModal.show()
+}
+
+const viewAccountTransactions = (account) => {
+  // Navigate to account details view which includes transactions
+  viewAccountDetails(account)
 }
 
 const closeAccount = async (account) => {
@@ -1201,5 +1418,144 @@ onMounted(async () => {
 
 .z-3 {
   z-index: 1030;
+}
+
+/* Account pagination styles */
+.pagination {
+  margin-bottom: 0;
+}
+
+.pagination .page-link {
+  color: #0d6efd;
+  border-color: #dee2e6;
+  padding: 0.375rem 0.75rem;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.pagination .page-item.disabled .page-link {
+  color: #6c757d;
+  background-color: #fff;
+  border-color: #dee2e6;
+}
+
+.btn-link {
+  border: none !important;
+  color: #212529;
+  text-decoration: none;
+}
+
+.btn-link:hover {
+  color: #0d6efd;
+}
+
+/* Table sorting icons */
+.bi-chevron-expand {
+  opacity: 0.5;
+}
+
+.bi-chevron-up,
+.bi-chevron-down {
+  opacity: 1;
+}
+
+/* Account search and filter styling */
+.input-group .btn {
+  border-left: 0;
+}
+
+.input-group .form-control:not(:last-child) {
+  border-right: 0;
+}
+
+/* Loading and empty states */
+.spinner-border {
+  width: 2rem;
+  height: 2rem;
+}
+
+.display-4 {
+  font-size: 3rem;
+  opacity: 0.3;
+}
+
+/* Responsive pagination */
+@media (max-width: 768px) {
+  .pagination .page-link {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  .btn-group-sm .btn {
+    padding: 0.125rem 0.25rem;
+    font-size: 0.75rem;
+  }
+  
+  .pagination .page-item:not(.active):not(:first-child):not(:last-child) {
+    display: none;
+  }
+}
+
+/* Enhanced table styling */
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.075);
+}
+
+.fw-semibold {
+  font-weight: 600;
+}
+
+.font-monospace {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9em;
+}
+
+/* Modal enhancements */
+.modal-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.modal-footer {
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+}
+
+/* Badge styling */
+.badge.bg-success {
+  background-color: #198754 !important;
+}
+
+.badge.bg-warning {
+  background-color: #ffc107 !important;
+  color: #000;
+}
+
+.badge.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+.badge.bg-primary {
+  background-color: #0d6efd !important;
+}
+
+/* Search input enhancements */
+.form-control:focus {
+  border-color: #86b7fe;
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.form-select:focus {
+  border-color: #86b7fe;
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.text-muted {
+  font-size: 0.875rem;
 }
 </style>
