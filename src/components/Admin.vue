@@ -219,21 +219,61 @@
             <form @submit.prevent="performAdminTransfer" class="row g-3">
               <div class="col-md-4">
                 <label class="form-label">From Account</label>
-                <select v-model="adminTransfer.fromIban" class="form-select" required>
-                  <option value="">Select source...</option>
-                  <option v-for="account in allAccounts" :key="account.id" :value="account.iban">
-                    {{ account.iban }} - {{ account.owner?.name }} (€{{ account.balance?.toFixed(2) }})
-                  </option>
-                </select>
+                <div class="position-relative">
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    placeholder="Search by IBAN or name" 
+                    v-model="fromAccountSearch"
+                    @input="filterFromAccounts"
+                    @focus="showFromAccountDropdown = true"
+                    @blur="setTimeout(() => { showFromAccountDropdown = false }, 200)"
+                    required
+                  >
+                  <div v-if="showFromAccountDropdown && filteredFromAccounts.length > 0" class="position-absolute w-100 mt-1 shadow-sm bg-white border rounded-2 z-3" style="max-height: 300px; overflow-y: auto;">
+                    <div 
+                      v-for="account in filteredFromAccounts" 
+                      :key="account.id" 
+                      class="p-2 border-bottom account-item"
+                      @mousedown="selectFromAccount(account)"
+                    >
+                      <div class="fw-bold">{{ account.iban }}</div>
+                      <div class="small text-muted">{{ account.owner?.name }} - €{{ account.balance?.toFixed(2) }}</div>
+                    </div>
+                  </div>
+                  <div v-if="adminTransfer.fromIban" class="mt-1 small text-success">
+                    Selected: {{ adminTransfer.fromIban }}
+                  </div>
+                </div>
               </div>
               <div class="col-md-4">
                 <label class="form-label">To Account</label>
-                <select v-model="adminTransfer.toIban" class="form-select" required>
-                  <option value="">Select destination...</option>
-                  <option v-for="account in allAccounts" :key="account.id" :value="account.iban">
-                    {{ account.iban }} - {{ account.owner?.name }}
-                  </option>
-                </select>
+                <div class="position-relative">
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    placeholder="Search by IBAN or name" 
+                    v-model="toAccountSearch"
+                    @input="filterToAccounts"
+                    @focus="showToAccountDropdown = true"
+                    @blur="setTimeout(() => { showToAccountDropdown = false }, 200)"
+                    required
+                  >
+                  <div v-if="showToAccountDropdown && filteredToAccounts.length > 0" class="position-absolute w-100 mt-1 shadow-sm bg-white border rounded-2 z-3" style="max-height: 300px; overflow-y: auto;">
+                    <div 
+                      v-for="account in filteredToAccounts" 
+                      :key="account.id" 
+                      class="p-2 border-bottom account-item"
+                      @mousedown="selectToAccount(account)"
+                    >
+                      <div class="fw-bold">{{ account.iban }}</div>
+                      <div class="small text-muted">{{ account.owner?.name }}</div>
+                    </div>
+                  </div>
+                  <div v-if="adminTransfer.toIban" class="mt-1 small text-success">
+                    Selected: {{ adminTransfer.toIban }}
+                  </div>
+                </div>
               </div>
               <div class="col-md-2">
                 <label class="form-label">Amount (€)</label>
@@ -258,13 +298,32 @@
             <div class="row mt-4">
               <div class="col-md-6">
                 <h6>Quick Deposit</h6>
+                <div class="mb-2 position-relative">
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    placeholder="Search account by IBAN or name" 
+                    v-model="depositAccountSearch"
+                    @input="filterDepositAccounts"
+                    @focus="showDepositAccountDropdown = true"
+                    @blur="setTimeout(() => { showDepositAccountDropdown = false }, 200)"
+                  >
+                  <div v-if="showDepositAccountDropdown && filteredDepositAccounts.length > 0" class="position-absolute w-100 mt-1 shadow-sm bg-white border rounded-2 z-3" style="max-height: 250px; overflow-y: auto;">
+                    <div 
+                      v-for="account in filteredDepositAccounts" 
+                      :key="account.id" 
+                      class="p-2 border-bottom account-item"
+                      @mousedown="selectDepositAccount(account)"
+                    >
+                      <div class="fw-bold">{{ account.iban }}</div>
+                      <div class="small text-muted">{{ account.owner?.name }} - €{{ account.balance?.toFixed(2) }}</div>
+                    </div>
+                  </div>
+                  <div v-if="quickDeposit.iban" class="mt-1 small text-success">
+                    Selected: {{ quickDeposit.iban }}
+                  </div>
+                </div>
                 <div class="input-group">
-                  <select v-model="quickDeposit.iban" class="form-select">
-                    <option value="">Select account...</option>
-                    <option v-for="account in allAccounts" :key="account.id" :value="account.iban">
-                      {{ account.iban }} - {{ account.owner?.name }}
-                    </option>
-                  </select>
                   <input 
                     type="number" 
                     v-model.number="quickDeposit.amount" 
@@ -272,20 +331,39 @@
                     placeholder="Amount"
                     step="0.01"
                   >
-                  <button class="btn btn-success" @click="performQuickDeposit" :disabled="depositLoading">
+                  <button class="btn btn-success" @click="performQuickDeposit" :disabled="depositLoading || !quickDeposit.iban">
                     <i class="bi bi-plus-circle"></i> Deposit
                   </button>
                 </div>
               </div>
               <div class="col-md-6">
                 <h6>Quick Withdrawal</h6>
+                <div class="mb-2 position-relative">
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    placeholder="Search account by IBAN or name" 
+                    v-model="withdrawAccountSearch"
+                    @input="filterWithdrawAccounts"
+                    @focus="showWithdrawAccountDropdown = true"
+                    @blur="setTimeout(() => { showWithdrawAccountDropdown = false }, 200)"
+                  >
+                  <div v-if="showWithdrawAccountDropdown && filteredWithdrawAccounts.length > 0" class="position-absolute w-100 mt-1 shadow-sm bg-white border rounded-2 z-3" style="max-height: 250px; overflow-y: auto;">
+                    <div 
+                      v-for="account in filteredWithdrawAccounts" 
+                      :key="account.id" 
+                      class="p-2 border-bottom account-item"
+                      @mousedown="selectWithdrawAccount(account)"
+                    >
+                      <div class="fw-bold">{{ account.iban }}</div>
+                      <div class="small text-muted">{{ account.owner?.name }} - €{{ account.balance?.toFixed(2) }}</div>
+                    </div>
+                  </div>
+                  <div v-if="quickWithdraw.iban" class="mt-1 small text-success">
+                    Selected: {{ quickWithdraw.iban }}
+                  </div>
+                </div>
                 <div class="input-group">
-                  <select v-model="quickWithdraw.iban" class="form-select">
-                    <option value="">Select account...</option>
-                    <option v-for="account in allAccounts" :key="account.id" :value="account.iban">
-                      {{ account.iban }} - {{ account.owner?.name }}
-                    </option>
-                  </select>
                   <input 
                     type="number" 
                     v-model.number="quickWithdraw.amount" 
@@ -293,7 +371,7 @@
                     placeholder="Amount"
                     step="0.01"
                   >
-                  <button class="btn btn-warning" @click="performQuickWithdraw" :disabled="withdrawLoading">
+                  <button class="btn btn-warning" @click="performQuickWithdraw" :disabled="withdrawLoading || !quickWithdraw.iban">
                     <i class="bi bi-dash-circle"></i> Withdraw
                   </button>
                 </div>
@@ -526,6 +604,20 @@ const accountTransactions = ref([])
 const selectedAccount = ref(null)
 const selectedAccountLimits = ref(null)
 
+// Search functionality for accounts
+const fromAccountSearch = ref('')
+const toAccountSearch = ref('')
+const depositAccountSearch = ref('')
+const withdrawAccountSearch = ref('')
+const filteredFromAccounts = ref([])
+const filteredToAccounts = ref([])
+const filteredDepositAccounts = ref([])
+const filteredWithdrawAccounts = ref([])
+const showFromAccountDropdown = ref(false)
+const showToAccountDropdown = ref(false)
+const showDepositAccountDropdown = ref(false)
+const showWithdrawAccountDropdown = ref(false)
+
 const loadingApprovals = ref(false)
 const limitLoading = ref(false)
 const transferLoading = ref(false)
@@ -714,6 +806,82 @@ const filterAccounts = () => {
   filteredAccounts.value = result
 }
 
+const filterFromAccounts = () => {
+  if (!fromAccountSearch.value.trim()) {
+    filteredFromAccounts.value = []
+    return
+  }
+  
+  const search = fromAccountSearch.value.toLowerCase()
+  filteredFromAccounts.value = allAccounts.value.filter(account => 
+    account.iban?.toLowerCase().includes(search) || 
+    account.owner?.name?.toLowerCase().includes(search)
+  ).slice(0, 10) // Limit to first 10 results for better performance
+}
+
+const filterToAccounts = () => {
+  if (!toAccountSearch.value.trim()) {
+    filteredToAccounts.value = []
+    return
+  }
+  
+  const search = toAccountSearch.value.toLowerCase()
+  filteredToAccounts.value = allAccounts.value.filter(account => 
+    account.iban?.toLowerCase().includes(search) || 
+    account.owner?.name?.toLowerCase().includes(search)
+  ).slice(0, 10) // Limit to first 10 results for better performance
+}
+
+const selectFromAccount = (account) => {
+  adminTransfer.value.fromIban = account.iban
+  fromAccountSearch.value = `${account.iban} - ${account.owner?.name || 'Unknown'}`
+  showFromAccountDropdown.value = false
+}
+
+const selectToAccount = (account) => {
+  adminTransfer.value.toIban = account.iban
+  toAccountSearch.value = `${account.iban} - ${account.owner?.name || 'Unknown'}`
+  showToAccountDropdown.value = false
+}
+
+const filterDepositAccounts = () => {
+  if (!depositAccountSearch.value.trim()) {
+    filteredDepositAccounts.value = []
+    return
+  }
+  
+  const search = depositAccountSearch.value.toLowerCase()
+  filteredDepositAccounts.value = allAccounts.value.filter(account => 
+    account.iban?.toLowerCase().includes(search) || 
+    account.owner?.name?.toLowerCase().includes(search)
+  ).slice(0, 10) // Limit to first 10 results for better performance
+}
+
+const filterWithdrawAccounts = () => {
+  if (!withdrawAccountSearch.value.trim()) {
+    filteredWithdrawAccounts.value = []
+    return
+  }
+  
+  const search = withdrawAccountSearch.value.toLowerCase()
+  filteredWithdrawAccounts.value = allAccounts.value.filter(account => 
+    account.iban?.toLowerCase().includes(search) || 
+    account.owner?.name?.toLowerCase().includes(search)
+  ).slice(0, 10) // Limit to first 10 results for better performance
+}
+
+const selectDepositAccount = (account) => {
+  quickDeposit.value.iban = account.iban
+  depositAccountSearch.value = `${account.iban} - ${account.owner?.name || 'Unknown'}`
+  showDepositAccountDropdown.value = false
+}
+
+const selectWithdrawAccount = (account) => {
+  quickWithdraw.value.iban = account.iban
+  withdrawAccountSearch.value = `${account.iban} - ${account.owner?.name || 'Unknown'}`
+  showWithdrawAccountDropdown.value = false
+}
+
 const approveUser = async (userId) => {
   try {
     await axios.post(API_ENDPOINTS.admin.approve(userId), {}, {
@@ -810,6 +978,8 @@ const performAdminTransfer = async () => {
     if (response.data.success) {
       showMessage(response.data.message, 'success')
       adminTransfer.value = { fromIban: '', toIban: '', amount: '' }
+      fromAccountSearch.value = ''
+      toAccountSearch.value = ''
       await fetchAllAccounts()
       await fetchDashboardStats()
     } else {
@@ -840,6 +1010,7 @@ const performQuickDeposit = async () => {
     if (response.data.success) {
       showMessage(response.data.message, 'success')
       quickDeposit.value = { iban: '', amount: '' }
+      depositAccountSearch.value = ''
       await fetchAllAccounts()
     } else {
       showMessage(response.data.message, 'error')
@@ -869,6 +1040,7 @@ const performQuickWithdraw = async () => {
     if (response.data.success) {
       showMessage(response.data.message, 'success')
       quickWithdraw.value = { iban: '', amount: '' }
+      withdrawAccountSearch.value = ''
       await fetchAllAccounts()
     } else {
       showMessage(response.data.message, 'error')
@@ -1016,5 +1188,18 @@ onMounted(async () => {
 .table-responsive {
   max-height: 600px;
   overflow-y: auto;
+}
+
+.account-item {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.account-item:hover {
+  background-color: #f5f5f5;
+}
+
+.z-3 {
+  z-index: 1030;
 }
 </style>
