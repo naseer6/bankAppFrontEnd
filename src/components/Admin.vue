@@ -53,11 +53,6 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="tab" href="#limits">
-          <i class="bi bi-sliders"></i> Limit Controls
-        </a>
-      </li>
-      <li class="nav-item">
         <a class="nav-link" data-bs-toggle="tab" href="#transfers">
           <i class="bi bi-arrow-left-right"></i> Admin Transfers
         </a>
@@ -215,70 +210,6 @@
         </div>
       </div>
 
-      <!-- Limit Controls Tab -->
-      <div class="tab-pane fade" id="limits">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title mb-4">Account Limit Management</h5>
-            
-            <form @submit.prevent="updateAccountLimits" class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label">Select Account</label>
-                <select v-model="limitForm.iban" class="form-select" required>
-                  <option value="">Choose account...</option>
-                  <option v-for="account in allAccounts" :key="account.id" :value="account.iban">
-                    {{ account.iban }} - {{ account.owner?.name }} ({{ account.type }})
-                  </option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Absolute Limit (€)</label>
-                <input 
-                  type="number" 
-                  v-model.number="limitForm.absoluteLimit" 
-                  class="form-control"
-                  step="0.01"
-                  min="0"
-                  placeholder="Min balance"
-                >
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Daily Limit (€)</label>
-                <input 
-                  type="number" 
-                  v-model.number="limitForm.dailyLimit" 
-                  class="form-control"
-                  step="0.01"
-                  min="0"
-                  placeholder="Max daily transfer"
-                >
-              </div>
-              <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100" :disabled="limitLoading">
-                  <span v-if="limitLoading" class="spinner-border spinner-border-sm me-2"></span>
-                  Update Limits
-                </button>
-              </div>
-            </form>
-
-            <!-- Current Limits Display -->
-            <div v-if="selectedAccountLimits" class="mt-4 p-3 bg-light rounded">
-              <h6>Current Limits for {{ limitForm.iban }}</h6>
-              <div class="row">
-                <div class="col-md-6">
-                  <p><strong>Absolute Limit:</strong> €{{ selectedAccountLimits.absoluteLimit?.toFixed(2) }}</p>
-                  <p><strong>Daily Limit:</strong> €{{ selectedAccountLimits.dailyLimit?.toFixed(2) }}</p>
-                </div>
-                <div class="col-md-6">
-                  <p><strong>Daily Spent Today:</strong> €{{ selectedAccountLimits.dailySpent?.toFixed(2) }}</p>
-                  <p><strong>Remaining Today:</strong> €{{ selectedAccountLimits.remainingDailyLimit?.toFixed(2) }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Admin Transfers Tab -->
       <div class="tab-pane fade" id="transfers">
         <div class="card">
@@ -378,7 +309,7 @@
       <div class="modal-dialog modal-lg">
         <div class="modal-content" v-if="selectedAccount">
           <div class="modal-header">
-            <h5 class="modal-title">Account Details</h5>
+            <h5 class="modal-title">Account Details - {{ selectedAccount.iban }}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
@@ -431,7 +362,56 @@
               </div>
             </div>
             
-            <h6 class="mt-3">Recent Transactions</h6>
+            <!-- Account Limits Section -->
+            <div class="mt-4" v-if="selectedAccount.active">
+              <h6>Account Limits</h6>
+              <div v-if="selectedAccountLimits" class="p-3 bg-light rounded mb-3">
+                <div class="row">
+                  <div class="col-md-6">
+                    <p class="mb-1"><strong>Absolute Limit:</strong> €{{ selectedAccountLimits.absoluteLimit?.toFixed(2) }}</p>
+                    <p class="mb-1"><strong>Daily Limit:</strong> €{{ selectedAccountLimits.dailyLimit?.toFixed(2) }}</p>
+                  </div>
+                  <div class="col-md-6">
+                    <p class="mb-1"><strong>Daily Spent Today:</strong> €{{ selectedAccountLimits.dailySpent?.toFixed(2) }}</p>
+                    <p class="mb-1"><strong>Remaining Today:</strong> €{{ selectedAccountLimits.remainingDailyLimit?.toFixed(2) }}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Edit Limits Form -->
+              <form @submit.prevent="updateAccountLimitsFromModal" class="row g-3">
+                <div class="col-md-5">
+                  <label class="form-label">Absolute Limit (€)</label>
+                  <input 
+                    type="number" 
+                    v-model.number="modalLimitForm.absoluteLimit" 
+                    class="form-control"
+                    step="0.01"
+                    min="0"
+                    :placeholder="selectedAccountLimits?.absoluteLimit?.toFixed(2) || '0.00'"
+                  >
+                </div>
+                <div class="col-md-5">
+                  <label class="form-label">Daily Limit (€)</label>
+                  <input 
+                    type="number" 
+                    v-model.number="modalLimitForm.dailyLimit" 
+                    class="form-control"
+                    step="0.01"
+                    min="0"
+                    :placeholder="selectedAccountLimits?.dailyLimit?.toFixed(2) || '1000.00'"
+                  >
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                  <button type="submit" class="btn btn-primary w-100" :disabled="limitLoading">
+                    <span v-if="limitLoading" class="spinner-border spinner-border-sm me-2"></span>
+                    Update
+                  </button>
+                </div>
+              </form>
+            </div>
+            
+            <h6 class="mt-4">Recent Transactions</h6>
             <div v-if="accountTransactions.length > 0" class="table-responsive">
               <table class="table table-sm">
                 <thead>
@@ -559,6 +539,11 @@ const messageType = ref('success')
 // Forms
 const limitForm = ref({
   iban: '',
+  absoluteLimit: '',
+  dailyLimit: ''
+})
+
+const modalLimitForm = ref({
   absoluteLimit: '',
   dailyLimit: ''
 })
@@ -745,11 +730,21 @@ const approveUser = async (userId) => {
 
 const viewAccountDetails = async (account) => {
   selectedAccount.value = account
+  // Reset modal limit form
+  modalLimitForm.value = {
+    absoluteLimit: '',
+    dailyLimit: ''
+  }
+  
   try {
+    // Fetch account transactions
     const response = await axios.get(API_ENDPOINTS.admin.accountTransactions(account.id), {
       headers: { Authorization: `Bearer ${getAuthToken()}` }
     })
     accountTransactions.value = response.data
+    
+    // Fetch account limits
+    await fetchAccountLimits(account.iban)
   } catch (error) {
     accountTransactions.value = []
   }
@@ -910,6 +905,39 @@ const createAccount = async () => {
     showMessage(error.response?.data || 'Failed to create account', 'error')
   } finally {
     createLoading.value = false
+  }
+}
+
+const updateAccountLimitsFromModal = async () => {
+  if (!selectedAccount.value) return
+  
+  limitLoading.value = true
+  try {
+    const params = new URLSearchParams()
+    params.append('iban', selectedAccount.value.iban)
+    if (modalLimitForm.value.absoluteLimit !== '') {
+      params.append('absoluteLimit', modalLimitForm.value.absoluteLimit)
+    }
+    if (modalLimitForm.value.dailyLimit !== '') {
+      params.append('dailyLimit', modalLimitForm.value.dailyLimit)
+    }
+
+    const response = await axios.post(`${API_ENDPOINTS.accounts.updateLimits}?${params}`, {}, {
+      headers: { Authorization: `Bearer ${getAuthToken()}` }
+    })
+
+    if (response.data.success) {
+      showMessage(response.data.message, 'success')
+      await fetchAllAccounts()
+      await fetchAccountLimits(selectedAccount.value.iban)
+      modalLimitForm.value = { absoluteLimit: '', dailyLimit: '' }
+    } else {
+      showMessage(response.data.message, 'error')
+    }
+  } catch (error) {
+    showMessage(error.response?.data?.message || 'Failed to update limits', 'error')
+  } finally {
+    limitLoading.value = false
   }
 }
 
